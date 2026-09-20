@@ -1,4 +1,4 @@
-// app/admin/customers/page.jsx
+// app/admin/customers/page.tsx
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
@@ -11,19 +11,30 @@ import {
   TrendingUp, MessageCircle, KeyRound, Clock, UserPlus, Edit2, Trash2
 } from 'lucide-react';
 
+type Customer = {
+  user_id: string | null;
+  name: string;
+  phone: string;
+  city: string;
+  address: string;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate: string;
+};
+
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState('');
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [stats, setStats] = useState({ totalCustomers: 0, avgSpent: 0, activeCustomers: 0 });
   const [loading, setLoading] = useState(true);
 
   // State Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authTargetCustomer, setAuthTargetCustomer] = useState(null);
+  const [authTargetCustomer, setAuthTargetCustomer] = useState<Customer | null>(null);
 
   // KODE PENGECEKAN ROLE TELAH DIHAPUS DARI SINI
   // Keamanan sudah dijamin 100% oleh app/admin/layout.tsx di latar belakang!
@@ -36,7 +47,7 @@ export default function AdminCustomersPage() {
       // PANGGIL SERVER ACTION (Bypass RLS otomatis)
       const { orders, profiles: registeredCustomers } = await getAdminCustomersData();
 
-      const customersMap = new Map();
+      const customersMap = new Map<string, Customer>();
       let totalRevenue = 0;
 
       // Masukkan dari tabel profil dulu
@@ -78,6 +89,7 @@ export default function AdminCustomersPage() {
         }
 
         const customer = customersMap.get(customerKey);
+        if (!customer) return;
         customer.totalOrders += 1;
         customer.totalSpent += (Number(order.grand_total) || 0); // Diubah ke Number() agar aman
         totalRevenue += (Number(order.grand_total) || 0);
@@ -115,7 +127,7 @@ export default function AdminCustomersPage() {
   }, []);
 
   // Handler Hapus
-  const handleDelete = (userId, name) => {
+  const handleDelete = (userId: string | null, name: string) => {
     if (!userId) {
       alert("Pelanggan ini berasal dari riwayat pesanan otomatis dan tidak memiliki profil terdaftar untuk dihapus.");
       return;
@@ -139,8 +151,8 @@ export default function AdminCustomersPage() {
     c.city.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
-  const formatDate = (dateStr) => new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(dateStr));
+  const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+  const formatDate = (dateStr: string) => new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(dateStr));
 
   return (
     <div className="space-y-6 font-sans">
@@ -337,7 +349,10 @@ export default function AdminCustomersPage() {
         <CustomerModal 
             isOpen={isModalOpen} 
             onClose={() => { setIsModalOpen(false); fetchData(); }} 
-            customerToEdit={selectedCustomer} 
+            customerToEdit={selectedCustomer ? {
+              ...selectedCustomer,
+              user_id: selectedCustomer.user_id ?? undefined,
+            } : null} 
         />
       
     </div>

@@ -5,7 +5,22 @@ import React, { useState, useTransition } from 'react';
 import { adminManageCustomerAuth } from '@/app/actions/customers';
 import { ShieldAlert, KeyRound, CheckCircle, X, Loader2 } from 'lucide-react';
 
-export default function CustomerAuthModal({ isOpen, onClose, customer }) {
+interface Customer {
+  user_id?: string | null;
+  name: string;
+}
+
+interface CustomerAuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  customer: Customer | null;
+}
+
+export default function CustomerAuthModal({
+  isOpen,
+  onClose,
+  customer,
+}: CustomerAuthModalProps) {
   const [isPending, startTransition] = useTransition();
   const [newPassword, setNewPassword] = useState('');
   const [verifyEmail, setVerifyEmail] = useState(true);
@@ -15,18 +30,20 @@ export default function CustomerAuthModal({ isOpen, onClose, customer }) {
   // Cek apakah pelanggan ini memiliki akun Auth (memiliki user_id yang valid)
   const hasAuthAccount = !!customer.user_id;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!hasAuthAccount) return;
+    if (!hasAuthAccount || !customer.user_id) return;
+
+    const userId = customer.user_id;
 
     startTransition(async () => {
-      const result = await adminManageCustomerAuth(customer.user_id, newPassword, verifyEmail);
+      const result = await adminManageCustomerAuth(userId, newPassword, verifyEmail);
       if (result.success) {
-        alert("Pengaturan akun pelanggan berhasil diperbarui!");
+        alert('Pengaturan akun pelanggan berhasil diperbarui!');
         onClose();
         setNewPassword('');
       } else {
-        alert("Gagal: " + result.message);
+        alert('Gagal: ' + result.message);
       }
     });
   };

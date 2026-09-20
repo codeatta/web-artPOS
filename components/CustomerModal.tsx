@@ -5,20 +5,42 @@ import React, { useState, useTransition } from 'react';
 import { addCustomer, updateCustomer } from '@/app/actions/customers';
 import { X, UserPlus, Edit3, Loader2 } from 'lucide-react';
 
-export default function CustomerModal({ isOpen, onClose, customerToEdit }) {
+type Customer = {
+  user_id?: string | number;
+  id?: string | number;
+  name?: string;
+  phone?: string;
+};
+
+type CustomerModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  customerToEdit?: Customer | null;
+};
+
+export default function CustomerModal({
+  isOpen,
+  onClose,
+  customerToEdit,
+}: CustomerModalProps) {
   const [isPending, startTransition] = useTransition();
   const isEditMode = !!customerToEdit;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = formData.get('name');
-    const phone = formData.get('phone');
+    const name = String(formData.get('name') || '');
+    const phone = String(formData.get('phone') || '');
 
     startTransition(async () => {
       let result;
       if (isEditMode) {
-        result = await updateCustomer(customerToEdit.user_id || customerToEdit.id, name, phone);
+        const customerId = customerToEdit.user_id ?? customerToEdit.id;
+        if (customerId == null) {
+          alert('Gagal: ID pelanggan tidak ditemukan');
+          return;
+        }
+        result = await updateCustomer(String(customerId), name, phone);
       } else {
         result = await addCustomer(formData);
       }

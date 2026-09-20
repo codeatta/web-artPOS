@@ -9,7 +9,9 @@ import { ArrowLeft, Package, Tags } from 'lucide-react';
 export const revalidate = 0;
 
 // Sesuai standar Next.js 15: searchParams harus di-await (Promise) meskipun tidak wajib dipakai
-export default async function CategoriesPage(props) {
+export default async function CategoriesPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await props.searchParams; // Selesaikan promise untuk standar Next.js 15
   
   const supabase = await createClient();

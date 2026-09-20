@@ -39,7 +39,7 @@ export default async function ReportsPage() {
   const currentDate = new Date();
   
   // Siapkan wadah untuk 6 bulan terakhir
-  const last6Months = [];
+  const last6Months: Array<{ key: string; label: string; total: number }> = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
     last6Months.push({
@@ -69,7 +69,12 @@ export default async function ReportsPage() {
   // ==========================================
   // KALKULASI 2: ANALISIS PERGERAKAN STOK BARANG
   // ==========================================
-  const productPerformance = {};
+  const productPerformance: Record<string, {
+    name: string;
+    stock: number;
+    sold: number;
+    revenue: number;
+  }> = {};
   
   // Inisialisasi semua produk dengan angka 0
   products?.forEach(p => {
@@ -99,7 +104,7 @@ export default async function ReportsPage() {
     .slice(0, 5);
 
   // FUNGSI FORMATTING
-  const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
+  const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
 
   return (
     <div className="space-y-6 font-sans max-w-7xl mx-auto">

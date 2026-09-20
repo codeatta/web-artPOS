@@ -1,4 +1,4 @@
-// app/admin/settings/page.jsx
+// app/admin/settings/page.tsx
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import SettingsForm from '@/components/SettingsForm';

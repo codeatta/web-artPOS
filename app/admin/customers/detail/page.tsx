@@ -18,7 +18,11 @@ import {
 
 export const revalidate = 0;
 
-export default async function CustomerDetailPage({ searchParams }) {
+export default async function CustomerDetailPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ phone?: string; name?: string }>;
+}) {
   const params = await searchParams;
   const targetPhone = params.phone;
   const targetName = params.name;
@@ -57,8 +61,8 @@ export default async function CustomerDetailPage({ searchParams }) {
   // 2. KLIEN BYPASS RLS
   const queryClient = isAdmin 
     ? createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
         { auth: { persistSession: false, autoRefreshToken: false } }
       )
     : supabase;
@@ -106,7 +110,8 @@ export default async function CustomerDetailPage({ searchParams }) {
   const productCount = new Map();
   orders.forEach(o => {
     o.order_items?.forEach(item => {
-      const pName = item.products?.name || 'Produk Dihapus';
+      const product = Array.isArray(item.products) ? item.products[0] : item.products;
+      const pName = product?.name || 'Produk Dihapus';
       const current = productCount.get(pName) || 0;
       productCount.set(pName, current + Number(item.quantity));
     });
@@ -114,9 +119,9 @@ export default async function CustomerDetailPage({ searchParams }) {
   
   const favoriteProduct = Array.from(productCount.entries()).sort((a, b) => b[1] - a[1])[0];
 
-  const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
-  const formatDate = (dateStr) => new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(dateStr));
-  const formatDateTime = (dateStr) => new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' }).format(new Date(dateStr));
+  const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+  const formatDate = (dateStr: string) => new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(dateStr));
+  const formatDateTime = (dateStr: string) => new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' }).format(new Date(dateStr));
   
   const waNumber = targetPhone && targetPhone !== '-' ? targetPhone.replace(/[^0-9]/g, '').replace(/^0/, '62') : '';
 
@@ -263,14 +268,15 @@ export default async function CustomerDetailPage({ searchParams }) {
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Rincian Barang:</p>
                       <ul className="space-y-2">
                         {order.order_items?.map((item, idx) => {
-                           const price = Number(item.price_at_time) || Number(item.products?.price_retail) || 0;
+                           const product = Array.isArray(item.products) ? item.products[0] : item.products;
+                           const price = Number(item.price_at_time) || Number(product?.price_retail) || 0;
                            const qty = Number(item.quantity) || 0;
 
                            return (
                             <li key={idx} className="flex justify-between items-start text-sm gap-4">
                               <div className="flex gap-2 text-gray-700 min-w-0">
                                 <span className="font-bold text-gray-900 shrink-0">{qty}x</span> 
-                                <span className="truncate">{item.products?.name || 'Produk Terhapus'}</span>
+                                <span className="truncate">{product?.name || 'Produk Terhapus'}</span>
                               </div>
                               <span className="font-semibold text-gray-600 whitespace-nowrap shrink-0">
                                 {formatRupiah(price * qty)}
