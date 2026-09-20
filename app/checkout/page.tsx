@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { processCheckout } from '@/app/actions/checkout';
-import { MapPin, Truck, CreditCard, ShoppingBag, Loader2 } from 'lucide-react';
+import { MapPin, Truck, ShieldCheck, ShoppingBag, Loader2, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function CheckoutPage() {
@@ -15,6 +15,9 @@ export default function CheckoutPage() {
   
   // State Interaktif
   const [selectedCourier, setSelectedCourier] = useState('JNE');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [voucherMessage, setVoucherMessage] = useState({ text: '', isError: false });
 
   useEffect(() => {
     async function fetchCheckoutData() {
@@ -26,7 +29,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Ambil Profile, Alamat, dan Keranjang
       const [profileRes, addressRes, cartRes] = await Promise.all([
         supabase.from('user_profiles').select('role').eq('user_id', user.id).single(),
         supabase.from('user_addresses').select('*').eq('user_id', user.id),
@@ -67,9 +69,28 @@ export default function CheckoutPage() {
   const weightKg = Math.ceil(totalWeightGram / 1000) || 1;
   const shippingRate = selectedCourier === 'JNE' ? 15000 : 12000;
   const shippingCost = weightKg * shippingRate;
-  const grandTotal = subtotal + shippingCost;
+  
+  // Kalkulasi Grand Total dengan Diskon
+  const grandTotal = Math.max(0, subtotal + shippingCost - discountAmount);
 
   const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+
+  // Fungsi Terapkan Voucher Dummy
+  const handleApplyVoucher = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const code = voucherCode.toUpperCase().trim();
+    if (code === 'DISKON20') {
+      setDiscountAmount(20000);
+      setVoucherMessage({ text: 'Voucher berhasil diterapkan! (-Rp20.000)', isError: false });
+    } else if (code === 'PROMO10') {
+      const discount = subtotal * 0.10; // Diskon 10%
+      setDiscountAmount(discount);
+      setVoucherMessage({ text: `Diskon 10% berhasil! (-${formatRupiah(discount)})`, isError: false });
+    } else {
+      setDiscountAmount(0);
+      setVoucherMessage({ text: 'Kode voucher tidak valid atau kedaluwarsa.', isError: true });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -78,13 +99,16 @@ export default function CheckoutPage() {
           <ShoppingBag className="text-orange-600" /> Proses Pembayaran
         </h1>
 
-        {/* Form menggunakan Server Action 'processCheckout' */}
         <form 
           action={processCheckout} 
           onSubmit={() => setIsSubmitting(true)}
           className="flex flex-col lg:flex-row gap-6"
         >
           
+          {/* Nilai Tersembunyi untuk dikirim ke Server */}
+          <input type="hidden" name="discount_amount" value={discountAmount} />
+          <input type="hidden" name="payment_method" value="Midtrans Gateway" />
+
           {/* KOLOM KIRI: Form Input */}
           <div className="lg:w-2/3 space-y-6">
             
@@ -128,16 +152,17 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 3. Metode Pembayaran */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <CreditCard className="text-orange-500" size={20} /> Metode Pembayaran
-              </h2>
-              <select name="payment_method" required className="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-orange-500 outline-none text-sm cursor-pointer">
-                <option value="BCA Virtual Account">BCA Virtual Account</option>
-                <option value="Mandiri Virtual Account">Mandiri Virtual Account</option>
-                <option value="QRIS">QRIS (Gopay, OVO, Dana)</option>
-              </select>
+            {/* 3. Penyesuaian Midtrans: Informasi Pembayaran */}
+            <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 flex gap-4 items-start">
+              <div className="p-3 bg-blue-100 text-blue-600 rounded-lg shrink-0">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-blue-900">Pembayaran Aman via Midtrans</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Anda dapat memilih metode pembayaran (Transfer Bank, Virtual Account, QRIS, GoPay, ShopeePay) di halaman selanjutnya setelah pesanan dibuat.
+                </p>
+              </div>
             </div>
 
           </div>
@@ -155,6 +180,30 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* FITUR KODE VOUCHER */}
+              <div className="mb-6 border-t pt-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag size={16} className="absolute left-3 top-3 text-gray-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Gunakan DISKON20" 
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-orange-500"
+                    />
+                  </div>
+                  <button onClick={handleApplyVoucher} className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 transition">
+                    Terapkan
+                  </button>
+                </div>
+                {voucherMessage.text && (
+                  <p className={`text-xs mt-2 font-medium ${voucherMessage.isError ? 'text-red-500' : 'text-green-600'}`}>
+                    {voucherMessage.text}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-3 text-sm text-gray-600 border-t pt-4 mb-6">
                 <div className="flex justify-between">
                   <span>Total Harga ({data.carts.length} barang)</span>
@@ -168,6 +217,12 @@ export default function CheckoutPage() {
                   <span>Ongkos Kirim ({selectedCourier})</span>
                   <span className="font-medium text-gray-800">{formatRupiah(shippingCost)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Diskon Voucher</span>
+                    <span className="font-medium">- {formatRupiah(discountAmount)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="border-t pt-4 mb-6">

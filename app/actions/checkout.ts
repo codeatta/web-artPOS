@@ -24,6 +24,8 @@ export async function processCheckout(formData: FormData) {
   const courier = formData.get('courier') as string;
   const paymentMethod = formData.get('payment_method') as string;
 
+  const discountAmount = parseInt(formData.get('discount_amount') as string) || 0;
+
   if (!addressId || !courier || !paymentMethod) {
     return redirect('/checkout?error=Mohon lengkapi alamat dan kurir');
   }
@@ -69,7 +71,7 @@ export async function processCheckout(formData: FormData) {
   const weightKg = Math.ceil(totalWeightGram / 1000) || 1;
   const shippingRate = courier === 'JNE' ? 15000 : 12000;
   const shippingCost = weightKg * shippingRate;
-  const grandTotal = subtotal + shippingCost;
+  const grandTotal = Math.max(0, subtotal + shippingCost - discountAmount);
 
   // 5. Buat Nomor Invoice
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -86,6 +88,7 @@ export async function processCheckout(formData: FormData) {
       total_weight_gram: totalWeightGram,
       subtotal_price: subtotal,
       shipping_cost: shippingCost,
+      discount_amount: discountAmount,
       grand_total: grandTotal,
       order_status: 'pending_payment'
     })
