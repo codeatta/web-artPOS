@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache';
 // =========================================================================
 // 1. UPDATE STATUS PESANAN
 // =========================================================================
-export async function updateOrderStatus(orderId: string, newStatus: string) {
+export async function updateOrderStatus(orderId: string, newStatus: string, trackingNumber?: string) {
   const supabaseAuth = await createClient();
   
   // Keamanan ekstra: Pastikan yang melakukan ini adalah admin atau kasir
@@ -29,14 +29,54 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
-  const { error } = await supabaseAdmin
+  const { data: orderData, error: updateError } = await supabaseAdmin
     .from('orders')
     .update({ order_status: newStatus })
-    .eq('order_id', orderId);
+    .eq('order_id', orderId)
+    .select(user_id, invoice_number)
+    .single();
 
-  if (error) {
-    console.error('Gagal update status pesanan:', error);
-    return { success: false, message: error.message };
+  if (updateError) {
+    console.error('Gagal update status pesanan:', updateError);
+    return { success: false, message: updateError.message };
+  }
+
+  // 2. KIRIM NOTIFIKASI BERDASARKAN STATUS
+  if (orderData) {
+    let notifTitle = '';
+    let notifMessage = '';
+
+    // Skenario A: Barang Dikirim
+    if (newStatus === 'shipped') {
+      notifTitle = 'Pesanan Sedang Dikirim 🚚';
+      notifMessage = `Pesanan Anda (${orderData.invoice_number}) telah diserahkan ke kurir. ${trackingNumber ? `No Resi: ${trackingNumber}` : 'Mohon ditunggu kedatangannya!'}`;
+    } 
+    // Skenario B: Pesanan Selesai / Diterima
+    else if (newStatus === 'completed') {
+      notifTitle = 'Pesanan Telah Tiba! 🎁';
+      notifMessage = `Pesanan ${orderData.invoice_number} telah sampai tujuan. Terima kasih telah berbelanja di TokoART!`;
+    }
+
+    // Skenario C: Pesanan Dibatalkan
+    else if (newStatus === 'cancelled') {
+      notifTitle = 'Pesanan Dibatalkan ❌';
+      notifMessage = `Pesanan ${orderData.invoice_number} telah dibatalkan. Jika ini adalah kesalahan, silakan hubungi layanan pelanggan kami.`;
+    }
+    // Skenario D: Pesanan Diproses
+    else if (newStatus === 'processing') {
+      notifTitle = 'Pesanan Sedang Diproses 🛠️';
+      notifMessage = `Pesanan ${orderData.invoice_number} sedang diproses. Kami akan segera mengirimkannya!`;
+    }
+
+    // Jika ada judul notifikasi yang cocok, masukkan ke database
+    if (notifTitle) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: orderData.user_id,
+        title: notifTitle,
+        message: notifMessage,
+        type: 'order'
+      });
+    }
   }
 
   revalidatePath('/admin/orders');
