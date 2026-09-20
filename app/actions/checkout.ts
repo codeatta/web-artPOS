@@ -1,7 +1,8 @@
 // app/actions/checkout.ts
 'use server';
 
-import { createClient as createAdminClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 
 export async function processCheckout(formData: FormData) {
@@ -11,6 +12,7 @@ export async function processCheckout(formData: FormData) {
   // Proteksi jika belum login
   if (!user) return redirect('/login');
 
+  // Siapkan Admin Client untuk menjamin keberhasilan Insert (Bypass RLS)
   const adminDb = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -45,7 +47,7 @@ export async function processCheckout(formData: FormData) {
   // 3. Kalkulasi Ulang Total di Server (Mencegah manipulasi dari frontend)
   let subtotal = 0;
   let totalWeightGram = 0;
-  const orderItemsToInsert = [];
+  const orderItemsToInsert: any[] = [];
 
   for (const item of cartItems) {
     const p = item.products as any;
@@ -74,7 +76,7 @@ export async function processCheckout(formData: FormData) {
   const randomStr = Math.floor(1000 + Math.random() * 9000);
   const invoiceNumber = `INV/${dateStr}/${randomStr}`;
 
-  // 6. INSERT KE TABEL ORDERS
+  // 6. INSERT KE TABEL ORDERS (Gunakan adminDb agar aman dari blokir RLS)
   const { data: orderData, error: orderError } = await adminDb
     .from('orders')
     .insert({
@@ -94,10 +96,10 @@ export async function processCheckout(formData: FormData) {
     console.error("GAGAL BUAT ORDER:", orderError);
     throw new Error("Gagal membuat pesanan");
   }
-
+  
   const orderId = orderData.order_id;
 
-  // 7. INSERT DETAIL PESANAN, PENGIRIMAN & PEMBAYARAN
+  // 7. INSERT DETAIL PESANAN, PENGIRIMAN & PEMBAYARAN (Gunakan adminDb)
   const itemsWithOrderId = orderItemsToInsert.map(item => ({ ...item, order_id: orderId }));
   
   // Eksekusi satu per satu & tangkap log error-nya
@@ -113,6 +115,6 @@ export async function processCheckout(formData: FormData) {
   // 8. Hapus Keranjang menggunakan Supabase client milik user 
   await supabase.from('carts').delete().eq('user_id', user.id);
 
-  // 9. Arahkan ke Beranda dengan pesan sukses
-    return redirect(`/orders/${orderId}`);
+  // 9. Arahkan ke halaman detail pesanan yang baru
+  return redirect(`/orders/${orderId}`);
 }
