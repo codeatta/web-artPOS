@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { processCheckout } from '@/app/actions/checkout';
 import { MapPin, Truck, ShieldCheck, ShoppingBag, Loader2, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { validateVoucher } from '@/app/actions/pos_voucher';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -77,23 +78,20 @@ export default function CheckoutPage() {
   const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
   // Fungsi Terapkan Voucher
-  const handleApplyVoucher = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const code = voucherCode.toUpperCase().trim();
-    if (code === 'DISKON20') {
-      setDiscountAmount(20000);
-      setAppliedVoucher('DISKON20');
-      setVoucherMessage({ text: 'Voucher berhasil diterapkan! (-Rp20.000)', isError: false });
-    } else if (code === 'PROMO10') {
-      const discount = subtotal * 0.10; // Diskon 10%
-      setDiscountAmount(discount);
-      setAppliedVoucher('PROMO10');
-      setVoucherMessage({ text: `Diskon 10% berhasil! (-${formatRupiah(discount)})`, isError: false });
-    } else {
-      setDiscountAmount(0);
-      setAppliedVoucher('');
-      setVoucherMessage({ text: 'Kode voucher tidak valid atau kedaluwarsa.', isError: true });
-    }
+  const handleApplyVoucher = async (e: React.MouseEvent) => {
+  e.preventDefault();
+    // Panggil Server Action validateVoucher
+  const result = await validateVoucher(voucherCode, subtotal);
+
+  if (result.success) {
+    setDiscountAmount(result.discountAmount ?? 0);
+    setAppliedVoucher(result.voucherCode);
+    setVoucherMessage({ text: result.message, isError: false });
+  } else {
+    setDiscountAmount(0);
+    setAppliedVoucher('');
+    setVoucherMessage({ text: result.message, isError: true });
+  }
   };
 
   return (
