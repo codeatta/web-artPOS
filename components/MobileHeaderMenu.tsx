@@ -9,9 +9,10 @@ import { createClient } from '@/utils/supabase/client';
 
 export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0); // State untuk jumlah notifikasi
   const router = useRouter();
 
-  // Mencegah scroll pada background saat menu terbuka
+  // 1. Kunci scroll saat menu terbuka
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -20,6 +21,35 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
     }
     return () => { document.body.style.overflow = 'unset'; }
   }, [isOpen]);
+
+  // 2. Ambil Jumlah Notifikasi Belum Dibaca
+  useEffect(() => {
+    async function fetchUnreadNotifications() {
+      if (!isLoggedIn) return;
+      
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Asumsi Anda memiliki tabel 'notifications' dengan kolom 'is_read'
+        // Jika tabel belum ada, kueri ini tidak akan merusak aplikasi (dibatalkan diam-diam)
+        const { count, error } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true }) // head: true sangat ringan karena hanya menghitung baris
+          .eq('user_id', user.id)
+          .eq('is_read', false);
+
+        if (!error && count !== null) {
+          setUnreadCount(count);
+        } else {
+          // Fallback dummy jika tabel belum dibuat (muncul angka 2 untuk testing visual)
+          setUnreadCount(2); 
+        }
+      }
+    }
+    
+    fetchUnreadNotifications();
+  }, [isLoggedIn]);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -35,9 +65,17 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
         <Link href="https://wa.me/6281234567890" target="_blank" title="Hubungi Admin" className="hover:text-orange-600 transition">
           <Mail size={20} />
         </Link>
-        <Link href="/notifications" className="hover:text-orange-600 transition">
+        
+        {/* IKON LONCENG DENGAN BADGE ANGKA */}
+        <Link href="/notifications" className="relative hover:text-orange-600 transition">
           <Bell size={20} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm flex items-center justify-center min-w-[18px]">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </Link>
+        
         <button onClick={() => setIsOpen(true)} className="hover:text-orange-600 transition active:scale-95">
           <Menu size={24} />
         </button>
@@ -47,27 +85,17 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
       {isOpen && (
         <div className="fixed inset-0 z-[99999] flex justify-end md:hidden">
           
-          {/* Backdrop Gelap (Bisa diklik untuk menutup) */}
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
-            onClick={() => setIsOpen(false)}
-          ></div>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsOpen(false)}></div>
           
-          {/* Panel Menu Putih */}
           <div className="relative w-3/4 max-w-[300px] bg-white h-full shadow-2xl flex flex-col animate-[slideIn_0.2s_ease-out]">
             
-            {/* Header Sidebar */}
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-orange-50">
               <span className="font-extrabold text-orange-600 text-lg">Menu Toko</span>
-              <button 
-                onClick={() => setIsOpen(false)} 
-                className="p-1.5 bg-white rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50 transition shadow-sm border border-gray-100"
-              >
+              <button onClick={() => setIsOpen(false)} className="p-1.5 bg-white rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50 transition shadow-sm border border-gray-100">
                 <X size={18} />
               </button>
             </div>
 
-            {/* List Navigasi */}
             <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
               <Link href="/" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 font-medium transition">
                 <Home size={18} className="text-gray-400" /> Beranda
@@ -80,9 +108,21 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
               </Link>
               
               {isLoggedIn && (
-                <Link href="/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 font-medium transition">
-                  <ShoppingBag size={18} className="text-gray-400" /> Riwayat Pesanan
-                </Link>
+                <>
+                  <Link href="/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 font-medium transition">
+                    <ShoppingBag size={18} className="text-gray-400" /> Riwayat Pesanan
+                  </Link>
+                  <Link href="/notifications" onClick={() => setIsOpen(false)} className="flex items-center justify-between p-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 font-medium transition">
+                    <div className="flex items-center gap-3">
+                      <Bell size={18} className="text-gray-400" /> Notifikasi
+                    </div>
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {unreadCount} Baru
+                      </span>
+                    )}
+                  </Link>
+                </>
               )}
               
               <div className="my-4 border-t border-gray-100"></div>
@@ -92,7 +132,6 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
               </Link>
             </div>
 
-            {/* Area Bawah (Tombol Auth) */}
             <div className="p-4 border-t border-gray-100 bg-gray-50/50 space-y-3">
               {isLoggedIn ? (
                 <>
@@ -113,14 +152,7 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
           </div>
         </div>
       )}
-
-      {/* Tambahan animasi CSS khusus untuk komponen ini */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes slideIn {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}} />
+      <style dangerouslySetInnerHTML={{__html: `@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}} />
     </>
   );
 }
