@@ -31,7 +31,7 @@ export async function createMidtransTransaction(orderId: string) {
   const address = Array.isArray(order.user_addresses) ? order.user_addresses[0] : order.user_addresses;
 
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
-  const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
+  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
   const snapUrl = isProduction 
     ? 'https://app.midtrans.com/snap/v1/transactions' 
     : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
