@@ -187,16 +187,16 @@ export default function CheckoutPage() {
               <div className="mb-6 border-t pt-4">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <Tag size={16} className="absolute left-3 top-3 text-gray-400" />
+                    <Tag size={16} className="absolute left-3 top-3 text-gray-500" />
                     <input 
                       type="text" 
                       placeholder="Gunakan DISKON20" 
                       value={voucherCode}
                       onChange={(e) => setVoucherCode(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-orange-500 uppercase"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-orange-500 uppercase"
                     />
                   </div>
-                  <button onClick={handleApplyVoucher} type="button" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 transition">
+                  <button onClick={handleApplyVoucher} type="button" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition">
                     Terapkan
                   </button>
                 </div>

@@ -45,15 +45,15 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1.5">Nama Toko</label>
-            <input type="text" name="store_name" value={formData.store_name} onChange={handleChange} required className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white" />
+            <input type="text" name="store_name" value={formData.store_name} onChange={handleChange} required className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white" />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1.5">No. Telepon / WhatsApp</label>
-            <input type="text" name="store_phone" value={formData.store_phone} onChange={handleChange} required className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white" />
+            <input type="text" name="store_phone" value={formData.store_phone} onChange={handleChange} required className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white" />
           </div>
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-700 mb-1.5">Alamat Lengkap (Tampil di Struk)</label>
-            <textarea name="store_address" value={formData.store_address} onChange={handleChange} rows={3} required className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 resize-none bg-gray-50 focus:bg-white"></textarea>
+            <textarea name="store_address" value={formData.store_address} onChange={handleChange} rows={3} required className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 resize-none bg-gray-50 focus:bg-white"></textarea>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1.5">Ukuran Kertas Printer Thermal</label>
-              <select name="receipt_size" value={formData.receipt_size} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500 cursor-pointer">
+              <select name="receipt_size" value={formData.receipt_size} onChange={handleChange} className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500 cursor-pointer">
                 <option value="58mm">Thermal 58mm (Kecil)</option>
                 <option value="80mm">Thermal 80mm (Besar/Standar)</option>
                 <option value="A4">A4 / Invoice Web</option>

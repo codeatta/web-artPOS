@@ -71,7 +71,7 @@ export default function StockAdjustmentForm({ products }: { products: any[] }) {
                 <div className="relative">
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">Cari Produk</label>
                   <div className="relative">
-                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ketik nama atau SKU..." className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ketik nama atau SKU..." className="w-full pl-9 pr-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                     <Search className="absolute left-3 top-3 text-gray-400" size={16} />
                   </div>
                   {filteredProducts.length > 0 && (
@@ -99,14 +99,14 @@ export default function StockAdjustmentForm({ products }: { products: any[] }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">Jenis Penyesuaian</label>
-                  <select value={type} onChange={(e) => setType(e.target.value as 'in' | 'out')} className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white cursor-pointer font-bold">
+                  <select value={type} onChange={(e) => setType(e.target.value as 'in' | 'out')} className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white cursor-pointer font-bold">
                     <option value="out">(-) Kurangi Stok</option>
                     <option value="in">(+) Tambah Stok</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">Alasan</label>
-                  <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white cursor-pointer">
+                  <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white cursor-pointer">
                     {type === 'out' ? (
                       <>
                         <option value="Barang Rusak">Barang Rusak</option>
@@ -128,7 +128,7 @@ export default function StockAdjustmentForm({ products }: { products: any[] }) {
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">Jumlah Barang</label>
                 <div className="relative">
-                  <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} placeholder="Masukkan angka..." className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold" required />
+                  <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} placeholder="Masukkan angka..." className="w-full pl-10 pr-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold" required />
                   <div className="absolute left-3 top-3 text-gray-500">
                     {type === 'out' ? <Minus size={16} className="text-red-500"/> : <Plus size={16} className="text-green-500"/>}
                   </div>
