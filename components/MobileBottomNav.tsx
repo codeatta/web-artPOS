@@ -9,7 +9,7 @@ import { createClient } from '@/utils/supabase/client';
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const [cartCount, setCartCount] = useState(0);
+  const [cartItemCount, setCartCount] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Sembunyikan menu bawah di halaman khusus
@@ -51,15 +51,15 @@ export default function MobileBottomNav() {
         <Menu size={22} />
         <span className="text-[10px] mt-1 font-medium">Katalog</span>
       </Link>
-      
+
       <Link href="/cart" className={`flex flex-col items-center transition relative ${pathname === '/cart' ? 'text-orange-600' : 'text-gray-400 hover:text-orange-600'}`}>
-        <ShoppingCart size={22} />
-        {cartCount > 0 && (
-          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
-            {cartCount}
-          </span>
-        )}
-        <span className="text-[10px] mt-1 font-medium">Keranjang</span>
+          <ShoppingCart size={22} />
+            {cartItemCount > 0 && (
+            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
+             {cartItemCount}
+             </span>
+          )}
+          <span className="text-[10px] mt-1 font-medium">Keranjang</span>
       </Link>
       
       <Link href="/profile" className={`flex flex-col items-center transition ${pathname.startsWith('/profile') || pathname.startsWith('/orders') ? 'text-orange-600' : 'text-gray-400 hover:text-orange-600'}`}>

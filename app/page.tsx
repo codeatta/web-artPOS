@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
-import { ShoppingCart, Search, Menu, MapPin, Star, Bell, Mail, Store, User } from 'lucide-react';
+import { ShoppingCart, MapPin, Store, User, Tag, Flame, Sparkles, Boxes, Utensils, Coffee, Flower2, ChefHat, Home, LayoutGrid } from 'lucide-react';
 import AddToCartButton from '@/components/AddToCartButton'; 
 import SearchBar from '@/components/SearchBar';
 import MobileHeaderMenu from '@/components/MobileHeaderMenu';
@@ -151,9 +151,28 @@ export default async function StorefrontPage() {
           <h3 className="text-lg font-bold text-gray-800 mb-4">Kategori Pilihan</h3>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-4 text-center">
             {displayCategories.map((cat, i) => {
-              // Jika kategori spesial, arahkan ke semua produk. Jika kategori asli, filter.
+              // 1. Logika Pemisahan Link
               const isSpecial = ['Promo', 'Terlaris', 'Terbaru', 'Grosir'].includes(cat);
               const hrefPath = isSpecial ? '/products' : `/products?category=${encodeURIComponent(cat)}`;
+
+              // 2. Fungsi Deteksi Ikon Cerdas Berdasarkan Nama Kategori
+              const getCategoryIcon = (categoryName: string) => {
+                const name = categoryName.toLowerCase();
+                if (name.includes('promo') || name.includes('diskon')) return Tag;
+                if (name.includes('laris') || name.includes('hot')) return Flame;
+                if (name.includes('baru') || name.includes('new')) return Sparkles;
+                if (name.includes('grosir') || name.includes('paket')) return Boxes;
+                if (name.includes('piring') || name.includes('makan') || name.includes('mangkok')) return Utensils;
+                if (name.includes('teko') || name.includes('minum') || name.includes('gelas')) return Coffee;
+                if (name.includes('vas') || name.includes('pot') || name.includes('taman')) return Flower2;
+                if (name.includes('dapur') || name.includes('masak') || name.includes('panci')) return ChefHat;
+                if (name.includes('hiasan') || name.includes('dekor')) return Home;
+                
+                return LayoutGrid; // Ikon default jika nama tidak ada yang cocok
+              };
+
+              // Menentukan komponen ikon yang akan dirender
+              const IconComponent = getCategoryIcon(cat);
 
               return (
                 <Link 
@@ -161,10 +180,11 @@ export default async function StorefrontPage() {
                   href={hrefPath} 
                   className="flex flex-col items-center cursor-pointer group"
                 >
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-100 transition mb-2 border border-orange-100">
-                    <span className="text-xl md:text-2xl font-bold uppercase">{cat.charAt(0)}</span>
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 mb-2 border border-orange-100 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
+                    {/* Render Ikon yang sudah dicocokkan */}
+                    <IconComponent className="w-6 h-6 md:w-7 md:h-7" strokeWidth={2} />
                   </div>
-                  <span className="text-xs text-gray-600 font-medium group-hover:text-orange-600 line-clamp-1">
+                  <span className="text-xs text-gray-600 font-bold group-hover:text-orange-600 line-clamp-1 transition-colors">
                     {cat}
                   </span>
                 </Link>

@@ -78,7 +78,7 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
     <>
       {/* 3 Ikon Utama di Header */}
       <div className="flex items-center gap-4 md:hidden text-gray-500">
-        <Link href="https://wa.me/6281234567890" target="_blank" title="Hubungi Admin" className="hover:text-orange-600 transition">
+        <Link href="https://wa.me/628122240693" target="_blank" title="Hubungi Admin" className="hover:text-orange-600 transition">
           <Mail size={20} />
         </Link>
         
@@ -143,7 +143,7 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
               
               <div className="my-4 border-t border-gray-100"></div>
               
-              <Link href="https://wa.me/6281234567890" target="_blank" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-green-50 text-gray-700 hover:text-green-600 font-medium transition">
+              <Link href="https://wa.me/628122240693" target="_blank" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-green-50 text-gray-700 hover:text-green-600 font-medium transition">
                 <MessageCircle size={18} className="text-green-500" /> Hubungi Admin (WA)
               </Link>
             </div>
