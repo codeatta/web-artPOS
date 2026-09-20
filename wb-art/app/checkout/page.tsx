@@ -99,7 +99,7 @@ export default function CheckoutPage() {
                   Anda belum memiliki alamat. Silakan tambah alamat di menu Profil.
                 </div>
               ) : (
-                <select name="address_id" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm cursor-pointer">
+                <select name="address_id" required className="w-full p-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm cursor-pointer">
                   {data.addresses.map((addr: any) => (
                     <option key={addr.address_id} value={addr.address_id}>
                       {addr.recipient_name} - {addr.street_address}, Kota ID: {addr.city_id} ({addr.phone_number})
@@ -133,7 +133,7 @@ export default function CheckoutPage() {
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <CreditCard className="text-orange-500" size={20} /> Metode Pembayaran
               </h2>
-              <select name="payment_method" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm cursor-pointer">
+              <select name="payment_method" required className="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-orange-500 outline-none text-sm cursor-pointer">
                 <option value="BCA Virtual Account">BCA Virtual Account</option>
                 <option value="Mandiri Virtual Account">Mandiri Virtual Account</option>
                 <option value="QRIS">QRIS (Gopay, OVO, Dana)</option>

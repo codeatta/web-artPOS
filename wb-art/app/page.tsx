@@ -28,23 +28,25 @@ export default async function StorefrontPage() {
     }
   }
 
-  // 3. Fetch Data Produk
+// Ambil data produk terbaru untuk beranda
   const { data: products, error } = await supabase
     .from('products')
     .select(`
       product_id,
       name,
       price_retail,
-      sku,
       stock,
-      categories ( name ),
-      product_images ( image_path, is_primary )
+      categories (name),
+      product_images:product_images!product_images_product_id_fkey(image_path, is_primary)
     `)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(20);
 
-  if (error) console.error("Gagal mengambil produk:", error);
+  // LOGIKA BARU: Paksa error menjadi teks agar terbaca jelas alasannya
+  if (error) {
+    console.error("Gagal mengambil produk:", JSON.stringify(error, null, 2));
+  }
 
   // LOGIKA BARU: Ekstrak Kategori Dinamis dari Produk
   const extractedCategories = Array.from(new Set(
@@ -90,7 +92,7 @@ export default async function StorefrontPage() {
               </div>
             </div>
 
-            <div className="flex-1 w-full flex items-center">
+            <div className="flex-1 w-full flex text-gray-700 items-center">
               <SearchBar basePath="/products" />
             </div>
 
@@ -187,10 +189,12 @@ export default async function StorefrontPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
             {products?.map((product) => {
-              const primaryImgObj = product.product_images?.find((img: any) => img.is_primary);
-              const imagePath = primaryImgObj 
-                ? primaryImgObj.image_path 
-                : (product.product_images?.[0]?.image_path || '/placeholder.jpg');
+              const images = product.product_images || [];
+              const primaryImg = Array.isArray(images) 
+                ? images.find((img: any) => img.is_primary)?.image_path || images[0]?.image_path 
+                : (images as any)?.image_path;
+              
+              const imagePath = primaryImg || '/placeholder.jpg';
               
               const hasDiscount = product.price_retail > 50000;
               const originalPrice = product.price_retail * 1.25;
@@ -241,7 +245,7 @@ export default async function StorefrontPage() {
 
                     <div className="flex items-center gap-1 mt-3 text-gray-500">
                       <MapPin size={12} className="text-orange-500" />
-                      <span className="text-xs truncate">Kab. Bantul</span>
+                      <span className="text-xs truncate">Kab. Ponorogo</span>
                     </div>
 
                     <div className="mt-auto pt-4 relative z-10">

@@ -86,7 +86,7 @@ export default async function AllProductsPage(props: { searchParams: Promise<{ s
           <Link href="/" className="text-gray-400 hover:text-orange-600 transition p-2 bg-gray-50 rounded-full border border-gray-100 flex-shrink-0">
             <ArrowLeft size={20} />
           </Link>
-          <div className="flex-1 max-w-2xl">
+          <div className="flex-1 text-gray-700 max-w-2xl">
             <SearchBar basePath="/products" />
           </div>
           <Link href="/cart" className="relative text-gray-500 hover:text-orange-600 transition">
@@ -143,30 +143,64 @@ export default async function AllProductsPage(props: { searchParams: Promise<{ s
           ) : (
             products.map((product) => {
               const primaryImgObj = product.product_images?.find((img: any) => img.is_primary);
-              const imagePath = primaryImgObj ? primaryImgObj.image_path : (product.product_images?.[0]?.image_path || '/placeholder.jpg');
+              const imagePath = primaryImgObj 
+                ? primaryImgObj.image_path 
+                : (product.product_images?.[0]?.image_path || '/placeholder.jpg');
+              
+              const hasDiscount = product.price_retail > 50000;
+              const originalPrice = product.price_retail * 1.25;;
 
               return (
-                <div key={product.product_id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group">
-                  <div className="relative aspect-square bg-stone-100">
+                <div key={product.product_id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:-translate-y-1 transition duration-300 flex flex-col group">
+                  
+                  {/* FOTO PRODUK (BISA DIKLIK) */}
+                  <Link href={`/products/${product.product_id}`} className="relative aspect-square bg-stone-100 block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imagePath} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <img 
+                      src={imagePath} 
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
                     {product.stock <= 0 && (
-                      <div className="absolute inset-0 bg-stone-900/60 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-stone-900/60 flex items-center justify-center backdrop-blur-[1px]">
                         <span className="bg-white text-stone-800 font-bold px-3 py-1 rounded text-sm shadow-sm">Stok Habis</span>
                       </div>
                     )}
-                  </div>
+                  </Link>
+
+                  {/* DETAIL PRODUK */}
                   <div className="p-3 md:p-4 flex flex-col flex-1">
                     <span className="text-[10px] font-bold text-orange-600 mb-1 uppercase tracking-wider">
                       {Array.isArray(product.categories) ? product.categories[0]?.name : (product.categories as any)?.name || 'Umum'}
                     </span>
-                    <h3 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug min-h-[40px]">{product.name}</h3>
-                    <div className="text-base md:text-lg font-extrabold text-gray-900 mt-2">{formatRupiah(product.price_retail)}</div>
+                    
+                    {/* NAMA PRODUK (BISA DIKLIK) */}
+                    <Link href={`/products/${product.product_id}`} className="hover:text-orange-600 transition">
+                      <h3 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug min-h-[40px]">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    
+                    <div className="text-base md:text-lg font-extrabold text-gray-900 mt-2">
+                      {formatRupiah(product.price_retail)}
+                    </div>
+                    
+                    {hasDiscount ? (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1 rounded border border-red-100">Hemat 20%</span>
+                        <span className="text-[10px] text-gray-400 line-through">{formatRupiah(originalPrice)}</span>
+                      </div>
+                    ) : (
+                      <div className="h-4 mt-0.5"></div>
+                    )}
+
                     <div className="flex items-center gap-1 mt-3 text-gray-500">
                       <MapPin size={12} className="text-orange-500" />
-                      <span className="text-xs truncate">Kab. Bantul</span>
+                      <span className="text-xs truncate">Kab. Ponorogo</span>
                     </div>
-                    <div className="mt-auto pt-4">
+
+                    <div className="mt-auto pt-4 relative z-10">
+                      {/* Tombol Add To Cart (Z-index agar tidak tumpang tindih dengan klik link) */}
                       <AddToCartButton productId={product.product_id} stock={product.stock} />
                     </div>
                   </div>

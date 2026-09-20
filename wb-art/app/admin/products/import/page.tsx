@@ -1,11 +1,30 @@
 // app/admin/products/import/page.tsx
 import React from 'react';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/server';
 import { ArrowLeft, FileSpreadsheet, Download, AlertCircle } from 'lucide-react';
 import { importProductsAction } from '@/app/actions/import';
+import {redirect} from 'next/navigation';
 import SubmitFormButton from '@/components/SubmitFormButton';
 
-export default function ImportProductsPage() {
+export default async function ImportProductsPage() {
+   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) redirect('/login');
+  
+      // 1. CEK ROLE PENGGUNA (Apakah Admin?)
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single();
+    
+      const isAdmin = profile?.role === 'admin' || profile?.role === 'kasir';
+    
+      if (!isAdmin) {
+        redirect('/unauthorized');
+      }
   // Membuat link download template CSV otomatis
   const csvTemplate = `Nama Produk,SKU,Kategori,Harga Retail,Harga Reseller,Stok,Berat Gram,Deskripsi
 Panci Tanah Liat,GRB-001,Dapur,50000,45000,100,1500,"Panci tradisional yang awet, tahan panas."
