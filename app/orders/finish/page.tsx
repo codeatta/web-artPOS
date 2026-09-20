@@ -6,7 +6,8 @@ import { CheckCircle2, Clock, XCircle, FileText } from 'lucide-react';
 export default async function MidtransFinishPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const searchParams = await props.searchParams;
   
-  const orderId = searchParams.order_id;
+  const rawOrderId = searchParams.order_id || '';
+  const orderId = rawOrderId.substring(0, 36);
   const transactionStatus = searchParams.transaction_status;
 
   if (!orderId) {

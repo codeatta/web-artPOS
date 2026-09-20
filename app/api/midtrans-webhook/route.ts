@@ -14,6 +14,8 @@ export async function POST(req: Request) {
     const signatureKey = notification.signature_key;
     const transactionStatus = notification.transaction_status;
     const fraudStatus = notification.fraud_status;
+    const midtransOrderId = notification.order_id;
+    const realOrderId = midtransOrderId.substring(0, 36);
 
     // Validasi Signature Key untuk keamanan (mencegah webhook palsu)
     const computedSignature = crypto
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
     const { error } = await supabaseAdmin
       .from('orders')
       .update({ order_status: newOrderStatus })
-      .eq('order_id', orderId);
+      .eq('order_id', realOrderId);
 
     if (error) {
       console.error("Webhook Database Update Error:", error);
