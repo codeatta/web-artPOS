@@ -1,114 +1,128 @@
-// components/SettingsForm.jsx
+// components/SettingsForm.tsx
 'use client';
 
 import React, { useState, useTransition } from 'react';
 import { updateStoreSettings } from '@/app/actions/settings';
-import { Store, MapPin, Phone, Percent, CreditCard, Truck, CheckCircle2, Loader2, Save } from 'lucide-react';
+import { Store, Palette, Printer, Save, Loader2, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export default function SettingsForm({
-  initialData,
-}: {
-  initialData?: Record<string, string | number | null | undefined>;
-}) {
+export default function SettingsForm({ initialData }: { initialData: any }) {
   const [isPending, startTransition] = useTransition();
-  const [showToast, setShowToast] = useState(false);
+  const [formData, setFormData] = useState(initialData);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-
     startTransition(async () => {
       const result = await updateStoreSettings(formData);
       if (result.success) {
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
+        toast.success('Pengaturan berhasil disimpan!');
       } else {
-        alert("Gagal menyimpan pengaturan: " + result.message);
+        toast.error(result.message || 'Gagal menyimpan pengaturan');
       }
     });
   };
 
+  // Pilihan Tema Warna
+  const themes = [
+    { id: 'blue', name: 'Biru Profesional', colorCode: 'bg-blue-600' },
+    { id: 'orange', name: 'Jingga (TokoART)', colorCode: 'bg-orange-600' },
+    { id: 'green', name: 'Hijau Segar', colorCode: 'bg-green-600' },
+    { id: 'purple', name: 'Ungu Elegan', colorCode: 'bg-purple-600' }
+  ];
+
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* BLOK 1: PROFIL TOKO */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-          <h2 className="font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-            <Store size={18} className="text-blue-500"/> Profil Toko (Tampil di Invoice)
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-1.5"><Store size={14}/> Nama Toko *</label>
-              <input type="text" name="store_name" defaultValue={initialData?.store_name ?? ''} required className="w-full text-gray-700 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-1.5"><Phone size={14}/> Nomor Telepon / WA</label>
-              <input type="text" name="store_phone" defaultValue={initialData?.store_phone ?? ''} className="w-full text-gray-700 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" />
-            </div>
+    <form onSubmit={handleSave} className="space-y-6">
+      
+      {/* SEKSI 1: INFORMASI TOKO */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2 border-b pb-3">
+          <Store className="text-blue-500" size={20} /> Informasi Dasar Toko
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Nama Toko</label>
+            <input type="text" name="store_name" value={formData.store_name} onChange={handleChange} required className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-1.5"><MapPin size={14}/> Alamat Lengkap Toko</label>
-            <textarea name="store_address" defaultValue={initialData?.store_address ?? ''} rows={3} className="w-full text-gray-700 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition resize-none"></textarea>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">No. Telepon / WhatsApp</label>
+            <input type="text" name="store_phone" value={formData.store_phone} onChange={handleChange} required className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Alamat Lengkap (Tampil di Struk)</label>
+            <textarea name="store_address" value={formData.store_address} onChange={handleChange} rows={3} required className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 resize-none bg-gray-50 focus:bg-white"></textarea>
           </div>
         </div>
+      </div>
 
-        {/* BLOK 2: PAJAK & PEMBAYARAN */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-          <h2 className="font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-            <CreditCard size={18} className="text-green-500"/> Finansial & Pembayaran
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* SEKSI 2: PENGATURAN STRUK POS */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
+          <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2 border-b pb-3">
+            <Printer className="text-purple-500" size={20} /> Pengaturan Struk & Kasir
           </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-1.5"><Percent size={14}/> PPN / Pajak (%)</label>
-              <input type="number" step="0.1" name="tax_percentage" defaultValue={initialData?.tax_percentage ?? ''} className="w-full text-gray-700 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition" />
-              <p className="text-xs text-gray-500 mt-1.5">Isi 0 jika tidak ada pajak.</p>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">Ukuran Kertas Printer Thermal</label>
+              <select name="receipt_size" value={formData.receipt_size} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500 cursor-pointer">
+                <option value="58mm">Thermal 58mm (Kecil)</option>
+                <option value="80mm">Thermal 80mm (Besar/Standar)</option>
+                <option value="A4">A4 / Invoice Web</option>
+              </select>
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1.5">Metode Pembayaran Tersedia</label>
-              <input type="text" name="payment_methods" defaultValue={initialData?.payment_methods ?? ''} placeholder="Pisahkan dengan koma (contoh: Tunai, BCA, OVO)" className="w-full text-gray-700 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition" />
-              <p className="text-xs text-gray-500 mt-1.5">Metode ini akan muncul sebagai pilihan saat kasir membuat pesanan.</p>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">Pesan Penutup di Bawah Struk</label>
+              <textarea name="receipt_footer" value={formData.receipt_footer} onChange={handleChange} rows={2} placeholder="Misal: Barang yang sudah dibeli tidak dapat ditukar." className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500 resize-none"></textarea>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">Pajak (PPN %)</label>
+              <input type="number" name="tax_percentage" value={formData.tax_percentage} onChange={handleChange} min="0" max="100" className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500" />
             </div>
           </div>
         </div>
 
-        {/* BLOK 3: PENGIRIMAN */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-          <h2 className="font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-            <Truck size={18} className="text-purple-500"/> Logistik & Pengiriman
+        {/* SEKSI 3: TEMA & TAMPILAN */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
+          <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2 border-b pb-3">
+            <Palette className="text-orange-500" size={20} /> Tema Aplikasi Utama
           </h2>
-          
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Daftar Kurir / Layanan</label>
-            <textarea name="couriers" defaultValue={initialData?.couriers ?? ''} rows={2} placeholder="Pisahkan dengan koma (contoh: Kurir Toko, JNE, J&T, Ambil Sendiri)" className="w-full text-gray-700 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition resize-none"></textarea>
+          <div className="space-y-4">
+            <label className="block text-xs font-bold text-gray-700">Pilih Warna Aksen</label>
+            <div className="grid grid-cols-2 gap-3">
+              {themes.map((theme) => (
+                <div 
+                  key={theme.id}
+                  onClick={() => setFormData({ ...formData, theme_color: theme.id })}
+                  className={`border-2 rounded-xl p-3 cursor-pointer flex items-center gap-3 transition-all ${formData.theme_color === theme.id ? 'border-gray-900 bg-gray-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                >
+                  <div className={`w-6 h-6 rounded-full shadow-sm ${theme.colorCode}`}></div>
+                  <span className="text-xs font-bold text-gray-800">{theme.name}</span>
+                  {formData.theme_color === theme.id && <CheckCircle2 size={16} className="text-gray-900 ml-auto" />}
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+              Perubahan tema akan otomatis diterapkan ke tombol, navigasi, dan elemen interaktif lainnya di aplikasi sisi Pelanggan maupun Admin setelah Anda menyimpan.
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* TOMBOL SIMPAN */}
-        <div className="flex justify-end sticky bottom-6">
-          <button 
-            type="submit" 
-            disabled={isPending}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition shadow-lg shadow-blue-200"
-          >
-            {isPending ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-            {isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}
-          </button>
-        </div>
-      </form>
+      {/* TOMBOL SIMPAN */}
+      <div className="sticky bottom-6 z-10 flex justify-end bg-white p-4 rounded-xl border border-gray-200 shadow-xl">
+        <button 
+          type="submit" 
+          disabled={isPending}
+          className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg flex items-center justify-center gap-2 transition disabled:bg-gray-400"
+        >
+          {isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} 
+          Simpan Pengaturan
+        </button>
+      </div>
 
-      {/* TOAST NOTIFIKASI */}
-      {showToast && (
-        <div className="fixed bottom-8 right-8 z-50 bg-green-600 border border-green-500 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-8 duration-300">
-          <CheckCircle2 size={24} className="text-white drop-shadow-sm" />
-          <div>
-            <p className="text-sm font-extrabold tracking-wide">Berhasil Disimpan!</p>
-            <p className="text-xs text-green-100 mt-0.5">Pengaturan toko telah diperbarui.</p>
-          </div>
-        </div>
-      )}
-    </>
+    </form>
   );
 }
