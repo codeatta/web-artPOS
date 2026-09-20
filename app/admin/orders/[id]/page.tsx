@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js'; 
 import { ArrowLeft, MapPin, Package, Truck, Printer, Save, Ticket, CreditCard, CheckCircle2, AlertCircle } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
+import AdminMidtransButton from '@/components/AdminMidtransButton';
 import { revalidatePath } from 'next/cache';
 
 export const revalidate = 0;
@@ -271,6 +272,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
             {/* Tombol Konfirmasi Manual (Jika Transfer/Pending) */}
             {currentOrderStatus === 'pending_payment' && (
+              <div className="mt-5 space-y-3">
               <form action={confirmManualPayment} className="mt-5">
                 <div className="bg-orange-50 p-3 rounded-lg flex gap-3 items-start mb-3 border border-orange-100">
                   <AlertCircle size={18} className="text-orange-500 shrink-0 mt-0.5" />
@@ -282,6 +284,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                   <CheckCircle2 size={18} /> Konfirmasi Pembayaran
                 </button>
               </form>
+
+              {/* TOMBOL BARU UNTUK KASIR POS */}
+                <div className="flex items-center gap-4 py-2">
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                  <span className="text-xs text-gray-400 font-bold uppercase">Atau</span>
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                </div>
+                <AdminMidtransButton orderId={orderId} />
+              </div>
             )}
           </div>
 
