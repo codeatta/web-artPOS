@@ -143,7 +143,10 @@ export default async function CustomerOrderDetailPage(props: { params: Promise<{
                 })}
               </div>
             </div>
+          </div>
 
+          {/* Kolom Kanan (Ringkasan Pembayaran & Tombol Midtrans) */}
+          <div className="space-y-6">
             {/* Info Pengiriman */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2 font-bold text-gray-800">
@@ -164,10 +167,6 @@ export default async function CustomerOrderDetailPage(props: { params: Promise<{
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Kolom Kanan (Ringkasan Pembayaran & Tombol Midtrans) */}
-          <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
               <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2 font-bold text-gray-800">
                 <Receipt size={18} className="text-gray-400" /> Ringkasan Pembayaran
