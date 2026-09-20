@@ -4,9 +4,11 @@
 import React, { useState, useTransition } from 'react';
 import { adjustStock } from '@/app/actions/inventory';
 import { Save, Loader2, X, Plus, Minus, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 export default function StockAdjustmentForm({ products }: { products: any[] }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState('');
@@ -42,6 +44,7 @@ export default function StockAdjustmentForm({ products }: { products: any[] }) {
         toast.success(result.message);
         setIsOpen(false);
         resetForm();
+        router.refresh();
       } else {
         toast.error(result.message);
       }
