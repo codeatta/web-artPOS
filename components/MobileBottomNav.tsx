@@ -1,7 +1,7 @@
 // components/MobileBottomNav.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Store, Menu, ShoppingCart, User } from 'lucide-react';
@@ -16,27 +16,64 @@ export default function MobileBottomNav() {
   const hiddenRoutes = ['/admin', '/login', '/register', '/checkout', '/orders/finish'];
   const isHidden = hiddenRoutes.some(route => pathname.startsWith(route));
 
-  // Ambil data keranjang secara dinamis di latar belakang
-  useEffect(() => {
-    async function fetchCartData() {
-      if (isHidden) return;
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        setIsLoggedIn(true);
-        const { data } = await supabase.from('carts').select('quantity').eq('user_id', user.id);
-        if (data) {
-          setCartCount(data.reduce((total, item) => total + item.quantity, 0));
-        }
+  // Fungsi untuk mengambil jumlah total item di keranjang
+  const fetchCartData = useCallback(async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      setIsLoggedIn(true);
+      const { data } = await supabase.from('carts').select('quantity').eq('user_id', user.id);
+      if (data) {
+        const total = data.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(total);
       } else {
-        setIsLoggedIn(false);
         setCartCount(0);
       }
+    } else {
+      setIsLoggedIn(false);
+      setCartCount(0);
     }
-    
+  }, []);
+
+  // Ambil data saat pertama kali dimuat atau rute berubah
+  useEffect(() => {
+    if (isHidden) return;
     fetchCartData();
-  }, [pathname, isHidden]); // Terpicu ulang setiap pindah halaman
+  }, [pathname, isHidden, fetchCartData]);
+
+  // SINKRONISASI REAL-TIME: Mendengarkan perubahan tabel 'carts' di database secara instan
+  useEffect(() => {
+    if (isHidden) return;
+    const supabase = createClient();
+    let channel: any;
+
+    async function setupRealtimeCart() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel('bottom-nav-cart-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'carts', filter: `user_id=eq.${user.id}` },
+          () => {
+            // Setiap ada penambahan, pengurangan, atau penghapusan item keranjang, 
+            // fungsi fetchCartData akan langsung dipanggil secara otomatis!
+            fetchCartData();
+          }
+        )
+        .subscribe();
+    }
+
+    setupRealtimeCart();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [isHidden, fetchCartData]);
 
   if (isHidden) return null;
 
@@ -55,9 +92,9 @@ export default function MobileBottomNav() {
       <Link href="/cart" className={`flex flex-col items-center transition relative ${pathname === '/cart' ? 'text-orange-600' : 'text-gray-400 hover:text-orange-600'}`}>
           <ShoppingCart size={22} />
             {cartItemCount > 0 && (
-            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
-             {cartItemCount}
-             </span>
+            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white animate-in zoom-in">
+               {cartItemCount}
+            </span>
           )}
           <span className="text-[10px] mt-1 font-medium">Keranjang</span>
       </Link>
