@@ -38,7 +38,7 @@ export default async function InventoryPage() {
     .select(`
       *,
       products (name, sku),
-      user_profiles (full_name)
+      user_profiles (name)
     `)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -109,7 +109,7 @@ export default async function InventoryPage() {
                       {log.notes || '-'}
                     </td>
                     <td className="p-4 text-xs font-bold text-gray-800">
-                      {log.user_profiles?.full_name || 'Admin'}
+                      {log.user_profiles?.name || 'Admin'}
                     </td>
                   </tr>
                 ))
