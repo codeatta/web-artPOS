@@ -23,9 +23,15 @@ export default async function InventoryPage() {
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
-  // Ambil Data Produk (Untuk Form Pencarian)
-  const { data: products } = await adminDb.from('products').select('product_id, name, sku, stock').eq('is_archived', false);
+  // Ambil Data Produk (Hilangkan .eq('is_archived', false) jika tidak ada kolomnya)
+  const { data: products, error: productError } = await adminDb
+    .from('products')
+    .select('product_id, name, sku, stock')
+    .order('name', { ascending: true });
 
+  if (productError) {
+    console.error("Gagal mengambil produk:", productError);
+  }
   // Ambil Riwayat Penyesuaian Stok
   const { data: logs } = await adminDb
     .from('stock_adjustments')

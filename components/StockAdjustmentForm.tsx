@@ -18,9 +18,14 @@ export default function StockAdjustmentForm({ products }: { products: any[] }) {
   const [quantity, setQuantity] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
 
-  const filteredProducts = search.trim() === '' ? [] : products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase())
-  ).slice(0, 5);
+  // Logika Pencarian Produk yang TAHAN ERROR (Safe Optional Chaining)
+  const filteredProducts = search.trim() === '' 
+    ? [] 
+    : products?.filter(p => {
+        const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase());
+        const skuMatch = p.sku?.toLowerCase().includes(search.toLowerCase());
+        return nameMatch || skuMatch;
+      }).slice(0, 5) || [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +142,7 @@ export default function StockAdjustmentForm({ products }: { products: any[] }) {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">Catatan Khusus (Opsional)</label>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Misal: Ditemukan rusak di gudang blok A" className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"></textarea>
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Misal: Ditemukan rusak di gudang blok A" className="w-full p-2.5 text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"></textarea>
               </div>
 
               <div className="pt-2">
