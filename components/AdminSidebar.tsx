@@ -9,7 +9,8 @@ import NewOrderNotification from '@/components/NewOrderNotification';
 import { 
   LayoutDashboard, ShoppingCart, Package, Users,
   BarChart3, LogOut, Shield, Settings, Tags, Bell,
-  Menu, X // <-- Tambahkan ikon Menu dan X
+  Menu, X, // <-- Tambahkan ikon Menu dan X
+  ClipboardList
 } from 'lucide-react';
 
 export default function AdminSidebar({ 
@@ -44,6 +45,7 @@ export default function AdminSidebar({
     { name: 'Staff', href: '/admin/staff', icon: Shield },
     { name: 'Voucher', href: '/admin/vouchers', icon: Tags },
     { name: 'Pengadaan', href: '/admin/procurement', icon: Package },
+    { name: 'Inventaris', href: '/admin/inventory', icon: ClipboardList },
     { name: 'Notifikasi', href: '/admin/notifications', icon: Bell },
     { name: 'Laporan', href: '/admin/reports', icon: BarChart3 },
     { name: 'Pengaturan', href: '/admin/settings', icon: Settings },
@@ -52,7 +54,7 @@ export default function AdminSidebar({
   // Filter menu berdasarkan hak akses
   const navItems = role === 'admin' 
     ? allNavItems 
-    : allNavItems.filter(item => !['Laporan', 'Pengaturan', 'Staff', 'Pengadaan', 'Notifikasi'].includes(item.name));
+    : allNavItems.filter(item => !['Laporan', 'Pengaturan', 'Staff', 'Pengadaan', 'Notifikasi', 'Inventaris'].includes(item.name));
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
