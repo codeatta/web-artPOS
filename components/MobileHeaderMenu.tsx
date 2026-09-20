@@ -22,33 +22,49 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
     return () => { document.body.style.overflow = 'unset'; }
   }, [isOpen]);
 
-  // 2. Ambil Jumlah Notifikasi Belum Dibaca
+  // 2. Ambil Jumlah Notifikasi & Aktifkan Supabase Realtime
   useEffect(() => {
-    async function fetchUnreadNotifications() {
+    let realtimeChannel: any;
+
+    async function setupNotifications() {
       if (!isLoggedIn) return;
-      
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (user) {
-        // Asumsi Anda memiliki tabel 'notifications' dengan kolom 'is_read'
-        // Jika tabel belum ada, kueri ini tidak akan merusak aplikasi (dibatalkan diam-diam)
-        const { count, error } = await supabase
-          .from('notifications')
-          .select('*', { count: 'exact', head: true }) // head: true sangat ringan karena hanya menghitung baris
-          .eq('user_id', user.id)
-          .eq('is_read', false);
+      if (!user) return;
 
-        if (!error && count !== null) {
-          setUnreadCount(count);
-        } else {
-          // Fallback dummy jika tabel belum dibuat (muncul angka 2 untuk testing visual)
-          setUnreadCount(2); 
-        }
-      }
+      // A. Ambil jumlah notifikasi saat halaman pertama kali dimuat
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+      
+      if (count !== null) setUnreadCount(count);
+
+      // B. AKTIFKAN REAL-TIME WEBSOCKET (Mendengarkan data baru secara instan)
+      realtimeChannel = supabase
+        .channel('realtime-notifs')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            // Jika ada notif baru masuk untuk user ini, langsung tambah angkanya!
+            setUnreadCount((currentCount) => currentCount + 1);
+          }
+        )
+        .subscribe();
     }
     
-    fetchUnreadNotifications();
+    setupNotifications();
+
+    // Bersihkan koneksi websocket saat pindah halaman agar memori tidak bocor
+    return () => {
+      if (realtimeChannel) {
+        const supabase = createClient();
+        supabase.removeChannel(realtimeChannel);
+      }
+    };
   }, [isLoggedIn]);
 
   const handleLogout = async () => {

@@ -54,7 +54,18 @@ export async function POST(req: Request) {
     const { error } = await supabaseAdmin
       .from('orders')
       .update({ order_status: newOrderStatus })
-      .eq('order_id', realOrderId);
+      .eq('order_id', realOrderId)
+      .select('user_id, invoice_number')
+      .single();
+
+      if (newOrderStatus === 'paid' && orderData) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: orderData.user_id,
+        title: 'Pembayaran Berhasil!',
+        message: `Hore! Pembayaran untuk pesanan ${orderData.invoice_number} telah kami terima.`,
+        type: 'order'
+      });
+    }
 
     if (error) {
       console.error("Webhook Database Update Error:", error);
