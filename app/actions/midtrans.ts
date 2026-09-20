@@ -17,7 +17,7 @@ export async function createMidtransTransaction(orderId: string) {
       *,
       user_addresses (*),
       order_items (
-        quantity, price_at_time,
+        quantity, price_per_item, total_price,
         products (name)
       )
     `)
@@ -39,7 +39,7 @@ export async function createMidtransTransaction(orderId: string) {
   // 1. Susun daftar barang (produk) yang dibeli
   const item_details = order.order_items.map((item: any) => ({
     id: item.product_id,
-    price: Number(item.price_per_item), // Gunakan price_per_item yang baru diperbaiki
+    price: Math.round(Number(item.price_per_item)), // Gunakan price_per_item yang baru diperbaiki
     quantity: Number(item.quantity),
     // Nama produk dibatasi maksimal 50 karakter oleh Midtrans
     name: item.products?.name?.substring(0, 50) || 'Produk Gerabah' 
@@ -49,7 +49,7 @@ export async function createMidtransTransaction(orderId: string) {
   if (Number(order.shipping_cost) > 0) {
     item_details.push({
       id: 'SHIPPING',
-      price: Number(order.shipping_cost),
+      price: Math.round(Number(order.shipping_cost)),
       quantity: 1,
       name: 'Ongkos Kirim'
     });
