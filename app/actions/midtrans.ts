@@ -63,7 +63,7 @@ export async function createMidtransTransaction(orderId: string) {
 
   const parameter = {
     transaction_details: {
-      order_id: order.invoice_number, 
+      order_id: order.order_id, 
       gross_amount: Number(order.grand_total),
     },
     item_details: itemDetails,

@@ -130,7 +130,7 @@ export default async function CustomerOrdersPage() {
                   <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
                     <Link 
                       className="text-sm font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-lg transition" 
-                      href={`/invoice/${order.invoice_number}`}
+                      href={`/orders/${order.order_id}`}
                     >
                       Lihat Detail Pesanan <ChevronRight size={16} />
                     </Link>

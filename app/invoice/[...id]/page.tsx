@@ -108,7 +108,7 @@ export default async function InvoicePage({
                 <div key={index} className="flex justify-between items-center text-sm">
                   <div className="flex-1 pr-4">
                     <p className="font-semibold text-gray-800">{productName}</p>
-                    <p className="text-gray-500">{item.quantity} x {formatRupiah(item.price_per_item)}</p>
+                    <p className="text-gray-500">{item.quantity} x {formatRupiah(item.price_at_time)}</p>
                   </div>
                   <div className="font-bold text-gray-900 text-right">
                     {formatRupiah(item.total_price)}

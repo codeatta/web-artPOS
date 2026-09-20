@@ -48,11 +48,11 @@ export async function POST(req: Request) {
       newOrderStatus = 'pending_payment';
     }
 
-    // Update status pesanan di database berdasarkan invoice_number
+    // Update status pesanan di database berdasarkan order_id (invoice_number)
     const { error } = await supabaseAdmin
       .from('orders')
       .update({ order_status: newOrderStatus })
-      .eq('invoice_number', orderId);
+      .eq('order_id', orderId);
 
     if (error) {
       console.error("Webhook Database Update Error:", error);

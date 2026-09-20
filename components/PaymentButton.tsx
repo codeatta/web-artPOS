@@ -1,4 +1,4 @@
-// components/PaymentButton.tsx
+// components/PaymentButton.tsx Non aktif
 'use client';
 
 import React, { useTransition } from 'react';

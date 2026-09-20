@@ -52,7 +52,7 @@ export async function processCheckout(formData: FormData) {
     orderItemsToInsert.push({
       product_id: p.product_id,
       quantity: item.quantity,
-      price_per_item: price,
+      price_at_time: price,
       total_price: price * item.quantity
     });
   }
@@ -98,5 +98,5 @@ export async function processCheckout(formData: FormData) {
   ]);
 
   // 9. Arahkan ke Beranda dengan pesan sukses
-    return redirect(`/invoice/${invoiceNumber}`);
+    return redirect(`/orders/${orderId}`);
 }
