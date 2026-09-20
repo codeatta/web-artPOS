@@ -34,7 +34,7 @@ export default async function CustomerOrderDetailPage(props: { params: Promise<{
       user_addresses (*),
       shipping (*),
       order_items (
-        order_item_id, quantity, price_at_time, total_price,
+        order_item_id, quantity, price_per_item, total_price,
         products (name, sku, product_images(image_path, is_primary))
       )
     `)
@@ -66,7 +66,7 @@ export default async function CustomerOrderDetailPage(props: { params: Promise<{
     
   
   const computedSubtotal = order.order_items?.reduce((sum: number, item: any) => {
-    return sum + Number(item.total_price || (item.quantity * item.price_at_time) || 0);
+    return sum + Number(item.total_price || (item.quantity * item.price_per_item) || 0);
   }, 0) || 0;
 
   // Fungsi Helper untuk Tampilan Status
@@ -134,7 +134,7 @@ export default async function CustomerOrderDetailPage(props: { params: Promise<{
                         <h3 className="font-bold text-gray-900 line-clamp-2">{item.products?.name || 'Produk Tidak Diketahui'}</h3>
                         <p className="text-sm text-gray-500 mt-0.5">SKU: {item.products?.sku || '-'}</p>
                         <div className="flex items-center justify-between mt-2">
-                          <p className="text-sm font-medium text-gray-600">{item.quantity || 1} x {formatRupiah(Number(item.price_at_time || 0))}</p>
+                          <p className="text-sm font-medium text-gray-600">{item.quantity || 1} x {formatRupiah(Number(item.price_per_item || 0))}</p>
                           <p className="font-bold text-gray-900">{formatRupiah(Number(item.total_price))}</p>
                         </div>
                       </div>

@@ -60,7 +60,7 @@ export async function processCheckout(formData: FormData) {
     orderItemsToInsert.push({
       product_id: p.product_id,
       quantity: item.quantity,
-      price_at_time: price,
+      price_per_item: price,
       total_price: price * item.quantity
     });
   }
