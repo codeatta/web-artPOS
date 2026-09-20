@@ -172,8 +172,8 @@ export async function createManualOrder(payload: any) {
         product_id: item.product_id || item.id, 
         quantity: qty,
         price_at_time: validPrice,
-        price_per_item: validPrice, // <-- Menjawab error "price_per_item"
-        total_price: validPrice * qty // <-- Melengkapi struktur dasar e-commerce
+        price_per_item: validPrice,
+        total_price: validPrice * qty 
       };
     });
 
@@ -183,14 +183,9 @@ export async function createManualOrder(payload: any) {
 
     if (itemsError) {
       console.error("Gagal menyimpan barang:", itemsError);
-      
       // Rollback: Hapus pesanan utama jika rincian barang gagal disimpan
       await supabaseAdmin.from('orders').delete().eq('order_id', newOrderId);
-      
-      return { 
-        success: false, 
-        message: `Gagal menyimpan barang: ${itemsError.message}` 
-      };
+      return { success: false, message: `Gagal menyimpan barang: ${itemsError.message}` };
     }
 
     // 5. SIMPAN KE TABEL shipping (Jika ada)
@@ -200,6 +195,22 @@ export async function createManualOrder(payload: any) {
       shipping_cost: payload.shippingCost,
       status: 'pending'
     });
+
+    // 6. SIMPAN DATA PEMBAYARAN KE TABEL payments (Sinkronisasi dengan Form Kasir)
+    const paymentStatus = payload.status === 'pending_payment' ? 'pending' : 'success';
+    const { error: paymentError } = await supabaseAdmin.from('payments').insert({
+      order_id: newOrderId,
+      payment_method: payload.paymentMethod || 'Tunai',
+      status: paymentStatus,
+      // Buka komentar 2 baris di bawah ini JIKA Anda sudah membuat kolomnya di tabel payments Supabase:
+      cash_received: payload.cashReceived || 0,
+      change_amount: payload.changeAmount || 0
+    });
+
+    if (paymentError) {
+      console.error("Gagal mencatat status pembayaran:", paymentError);
+      // Kita tidak melakukan rollback di sini agar order utama tetap masuk
+    }
 
     revalidatePath('/admin/orders');
     return { success: true, orderId: newOrderId };
