@@ -50,26 +50,40 @@ export async function POST(req: Request) {
       newOrderStatus = 'pending_payment';
     }
 
-    // Update status pesanan di database berdasarkan order_id (invoice_number)
-    const { error } = await supabaseAdmin
+    // ========================================================
+    // 1. UPDATE STATUS & AMBIL DATA PESANAN (Mencegah Error)
+    // ========================================================
+    const { data: orderData, error: updateError } = await supabaseAdmin
       .from('orders')
       .update({ order_status: newOrderStatus })
       .eq('order_id', realOrderId)
-      .select('user_id, invoice_number')
+      .select('user_id, invoice_number') // <--- Wajib ditambahkan agar orderData terisi
       .single();
 
-      if (newOrderStatus === 'paid' && orderData) {
-      await supabaseAdmin.from('notifications').insert({
-        user_id: orderData.user_id,
-        title: 'Pembayaran Berhasil!',
-        message: `Hore! Pembayaran untuk pesanan ${orderData.invoice_number} telah kami terima.`,
-        type: 'order'
-      });
+    if (updateError) {
+      console.error("Gagal memperbarui status pesanan:", updateError);
     }
 
-    if (error) {
-      console.error("Webhook Database Update Error:", error);
-      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    // ========================================================
+    // 2. KIRIM NOTIFIKASI OTOMATIS JIKA LUNAS
+    // ========================================================
+    // Sekarang TypeScript mengenali 'orderData' karena sudah dideklarasikan di atas
+    if (newOrderStatus === 'paid' && orderData) {
+      const { error: notifError } = await supabaseAdmin.from('notifications').insert({
+        user_id: orderData.user_id,
+        title: 'Pembayaran Berhasil! 🎉',
+        message: `Hore! Pembayaran untuk pesanan ${orderData.invoice_number} telah kami terima. Pesanan Anda akan segera diproses.`,
+        type: 'order'
+      });
+      
+      if (notifError) {
+        console.error("Gagal mengirim notifikasi:", notifError);
+      }
+    }
+
+    if (updateError) {
+      console.error("Webhook Database Update Error:", updateError);
+      return NextResponse.json({ success: false, message: updateError.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: 'Webhook processed successfully' });
