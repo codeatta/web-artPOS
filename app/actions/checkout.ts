@@ -25,6 +25,7 @@ export async function processCheckout(formData: FormData) {
   const paymentMethod = formData.get('payment_method') as string;
 
   const discountAmount = parseInt(formData.get('discount_amount') as string) || 0;
+  const voucherCode = formData.get('voucher_code') as string;
 
   if (!addressId || !courier || !paymentMethod) {
     return redirect('/checkout?error=Mohon lengkapi alamat dan kurir');
@@ -89,6 +90,7 @@ export async function processCheckout(formData: FormData) {
       subtotal_price: subtotal,
       shipping_cost: shippingCost,
       discount_amount: discountAmount,
+      voucher_code: voucherCode || null,
       grand_total: grandTotal,
       order_status: 'pending_payment'
     })

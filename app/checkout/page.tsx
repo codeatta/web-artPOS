@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   // State Interaktif
   const [selectedCourier, setSelectedCourier] = useState('JNE');
   const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState(''); // Menyimpan kode voucher yang valid
   const [discountAmount, setDiscountAmount] = useState(0);
   const [voucherMessage, setVoucherMessage] = useState({ text: '', isError: false });
 
@@ -75,19 +76,22 @@ export default function CheckoutPage() {
 
   const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  // Fungsi Terapkan Voucher Dummy
+  // Fungsi Terapkan Voucher
   const handleApplyVoucher = (e: React.MouseEvent) => {
     e.preventDefault();
     const code = voucherCode.toUpperCase().trim();
     if (code === 'DISKON20') {
       setDiscountAmount(20000);
+      setAppliedVoucher('DISKON20');
       setVoucherMessage({ text: 'Voucher berhasil diterapkan! (-Rp20.000)', isError: false });
     } else if (code === 'PROMO10') {
       const discount = subtotal * 0.10; // Diskon 10%
       setDiscountAmount(discount);
+      setAppliedVoucher('PROMO10');
       setVoucherMessage({ text: `Diskon 10% berhasil! (-${formatRupiah(discount)})`, isError: false });
     } else {
       setDiscountAmount(0);
+      setAppliedVoucher('');
       setVoucherMessage({ text: 'Kode voucher tidak valid atau kedaluwarsa.', isError: true });
     }
   };
@@ -105,8 +109,9 @@ export default function CheckoutPage() {
           className="flex flex-col lg:flex-row gap-6"
         >
           
-          {/* Nilai Tersembunyi untuk dikirim ke Server */}
+          {/* Nilai Tersembunyi untuk dikirim ke Server (Termasuk Kode Voucher) */}
           <input type="hidden" name="discount_amount" value={discountAmount} />
+          <input type="hidden" name="voucher_code" value={appliedVoucher} />
           <input type="hidden" name="payment_method" value="Midtrans Gateway" />
 
           {/* KOLOM KIRI: Form Input */}
@@ -152,7 +157,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 3. Penyesuaian Midtrans: Informasi Pembayaran */}
+            {/* 3. Informasi Pembayaran Midtrans */}
             <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 flex gap-4 items-start">
               <div className="p-3 bg-blue-100 text-blue-600 rounded-lg shrink-0">
                 <ShieldCheck size={24} />
@@ -190,10 +195,10 @@ export default function CheckoutPage() {
                       placeholder="Gunakan DISKON20" 
                       value={voucherCode}
                       onChange={(e) => setVoucherCode(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-orange-500"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-orange-500 uppercase"
                     />
                   </div>
-                  <button onClick={handleApplyVoucher} className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 transition">
+                  <button onClick={handleApplyVoucher} type="button" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 transition">
                     Terapkan
                   </button>
                 </div>
@@ -219,7 +224,7 @@ export default function CheckoutPage() {
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Diskon Voucher</span>
+                    <span>Diskon Voucher ({appliedVoucher})</span>
                     <span className="font-medium">- {formatRupiah(discountAmount)}</span>
                   </div>
                 )}

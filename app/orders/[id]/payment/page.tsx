@@ -4,10 +4,10 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createMidtransTransaction } from '@/app/actions/midtrans';
-import { CreditCard, ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { CreditCard, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import toast from 'react-hot-toast'; // <--- Import Toast
 
-// Deklarasi tipe global untuk Midtrans Snap di window browser
 declare global {
   interface Window {
     snap: any;
@@ -21,10 +21,9 @@ export default function PaymentPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [snapToken, setSnapToken] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  // 1. Muat Script Midtrans Snap secara dinamis saat halaman dibuka
+  // 1. Muat Script Midtrans Snap
   useEffect(() => {
     const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
     const isProd = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
@@ -44,7 +43,7 @@ export default function PaymentPage() {
     };
   }, []);
 
-  // 2. Fungsi untuk Meminta Token & Membuka Popup Midtrans Snap
+  // 2. Fungsi Buka Popup Midtrans Snap dengan Toast
   const handleOpenPaymentModal = () => {
     setLoading(true);
     setErrorMessage('');
@@ -55,52 +54,53 @@ export default function PaymentPage() {
 
       if (!result.success) {
         setErrorMessage(result.message || 'Gagal membuat sesi pembayaran.');
+        toast.error('Gagal menghubungkan ke sistem pembayaran.');
         return;
       }
 
       if (result.token && window.snap) {
-        setSnapToken(result.token);
+        toast.success('Sesi pembayaran siap! Silakan pilih metode pembayaran.');
         
-        // Buka Popup Midtrans Snap
         window.snap.pay(result.token, {
-          onSuccess: function (result: any) {
-            alert("Pembayaran berhasil!");
-            router.push(`/orders?success=true`);
+          onSuccess: function (res: any) {
+            toast.success('Pembayaran Berhasil! 🎉');
+            router.push(`/orders/finish?order_id=${orderId}&transaction_status=settlement`);
           },
-          onPending: function (result: any) {
-            alert("Menunggu pembayaran Anda.");
-            router.push(`/orders`);
+          onPending: function (res: any) {
+            toast('Menunggu konfirmasi pembayaran Anda.', { icon: '⏳' });
+            router.push(`/orders/finish?order_id=${orderId}&transaction_status=pending`);
           },
-          onError: function (result: any) {
-            alert("Pembayaran gagal! Silakan coba lagi.");
+          onError: function (res: any) {
+            toast.error('Pembayaran Gagal! Silakan coba lagi.');
           },
           onClose: function () {
-            console.log('Popup pembayaran ditutup tanpa menyelesaikan transaksi.');
+            toast('Popup pembayaran ditutup.', { icon: '⚠️' });
           }
         });
       } else {
         setErrorMessage('Midtrans Snap gagal dimuat di browser.');
+        toast.error('Gagal memuat modul pembayaran.');
       }
     });
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 max-w-md w-full text-center space-y-6">
+      <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full text-center space-y-6">
         
         <div className="flex items-center justify-start">
-          <Link href="/orders" className="p-2 text-gray-500 hover:text-gray-900 transition bg-gray-50 rounded-xl">
+          <Link href={`/orders/${orderId}`} className="p-2 text-gray-500 hover:text-gray-900 transition bg-gray-50 rounded-xl">
             <ArrowLeft size={20} />
           </Link>
         </div>
 
-        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+        <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-orange-200">
           <CreditCard size={32} />
         </div>
 
         <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Selesaikan Pembayaran</h1>
-          <p className="text-gray-500 text-sm mt-1">Lakukan pembayaran aman menggunakan QRIS, Virtual Account, E-Wallet, atau Kartu Kredit via Midtrans.</p>
+          <p className="text-gray-500 text-sm mt-1">Lakukan pembayaran aman menggunakan QRIS, Virtual Account, E-Wallet, atau Kartu Kredit.</p>
         </div>
 
         {errorMessage && (
@@ -112,11 +112,11 @@ export default function PaymentPage() {
         <button 
           onClick={handleOpenPaymentModal}
           disabled={loading || isPending}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 transition shadow-lg shadow-blue-200"
+          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-bold py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 transition shadow-lg shadow-orange-200 cursor-pointer"
         >
           {loading || isPending ? (
             <>
-              <Loader2 size={20} className="animate-spin" /> Menghubungkan ke Midtrans...
+              <Loader2 size={20} className="animate-spin" /> Menghubungkan...
             </>
           ) : (
             <>
