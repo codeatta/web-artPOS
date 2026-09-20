@@ -73,7 +73,7 @@ export default async function StorefrontPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50 font-sans">
       
       {/* NAVBAR / HEADER */}
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
@@ -259,33 +259,6 @@ export default async function StorefrontPage() {
           </div>
         </section>
       </main>
-
-      {/* BOTTOM NAVIGATION (MOBILE ONLY) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-16 pb-1 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <Link href="/" className="flex flex-col items-center text-orange-600">
-          <Store size={22} />
-          <span className="text-[10px] font-bold mt-1">Beranda</span>
-        </Link>
-        <Link href="/categories" className="flex flex-col items-center text-gray-400 hover:text-orange-600 transition">
-          <Menu size={22} />
-          <span className="text-[10px] mt-1 font-medium">Kategori</span>
-        </Link>
-        <Link href="/cart" className="flex flex-col items-center text-gray-400 hover:text-orange-600 transition relative">
-          <ShoppingCart size={22} />
-          {/* Badge Keranjang Dinamis untuk Mobile */}
-          {cartItemCount > 0 && (
-            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
-              {cartItemCount}
-            </span>
-          )}
-          <span className="text-[10px] mt-1 font-medium">Keranjang</span>
-        </Link>
-        <Link href="/profile" className="flex flex-col items-center text-gray-400 hover:text-orange-600 transition">
-          <User size={22} />
-          <span className="text-[10px] mt-1 font-medium">{user ? 'Profil' : 'Masuk'}</span>
-        </Link>
-      </div>
-
     </div>
   );
 }

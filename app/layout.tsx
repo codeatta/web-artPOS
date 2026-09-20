@@ -1,6 +1,8 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,13 +19,23 @@ export const metadata: Metadata = {
   description: "Website Toko Alat Rumah Tangga",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// PERBAIKAN TIPE: Gunakan standar React.ReactNode untuk children
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* Tambahkan padding bawah di mobile agar konten tidak tertutup menu */}
+      <body className="min-h-full flex flex-col pb-16 md:pb-0">
+        
+        {/* Konten Utama Seluruh Halaman */}
+        {children}
+        
+        {/* Menu Navigasi Bawah (Hanya muncul di Layar HP) */}
+        <MobileBottomNav />
+        
+      </body>
     </html>
   );
 }
