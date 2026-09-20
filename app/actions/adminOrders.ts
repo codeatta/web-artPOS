@@ -33,7 +33,7 @@ export async function updateOrderStatus(orderId: string, newStatus: string, trac
     .from('orders')
     .update({ order_status: newStatus })
     .eq('order_id', orderId)
-    .select(user_id, invoice_number)
+    .select('user_id, invoice_number')
     .single();
 
   if (updateError) {
