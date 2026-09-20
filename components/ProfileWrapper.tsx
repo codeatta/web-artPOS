@@ -6,6 +6,7 @@ import { User, MapPin, LogOut, Package, Store, ArrowRight, Plus, Trash2, Edit } 
 import Link from 'next/link';
 import { EditProfileModal, AddAddressModal } from '@/components/ProfileModals';
 import { deleteAddress } from '@/app/actions/profile';
+import toast from 'react-hot-toast'; // <--- 1. Import React Hot Toast
 
 export default function ProfileWrapper({ user, profile, addresses, signOutAction }: { user: any; profile: any; addresses: any[]; signOutAction: any }) {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -14,8 +15,19 @@ export default function ProfileWrapper({ user, profile, addresses, signOutAction
 
   const handleDeleteAddress = (addressId: string) => {
     if (!window.confirm("Yakin ingin menghapus alamat ini?")) return;
+    
+    // 2. Munculkan Toast Loading
+    const toastId = toast.loading('Menghapus alamat...');
+    
     startTransition(async () => {
-      await deleteAddress(addressId);
+      try {
+        await deleteAddress(addressId);
+        // 3. Ubah menjadi Success jika berhasil
+        toast.success('Alamat berhasil dihapus 🗑️', { id: toastId });
+      } catch (error) {
+        // 4. Ubah menjadi Error jika gagal
+        toast.error('Gagal menghapus alamat', { id: toastId });
+      }
     });
   };
 
@@ -49,7 +61,12 @@ export default function ProfileWrapper({ user, profile, addresses, signOutAction
 
               <div className="w-full h-px bg-gray-100 my-4"></div>
               
-              <form action={signOutAction} className="w-full">
+              {/* 5. Tambahkan Toast pada Form Logout */}
+              <form 
+                action={signOutAction} 
+                onSubmit={() => toast.success('Berhasil keluar. Sampai jumpa! 👋', { style: { background: '#10B981', color: '#fff' } })}
+                className="w-full"
+              >
                 <button type="submit" className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 py-2 rounded-lg font-medium transition">
                   <LogOut size={18} /> Keluar Akun
                 </button>
