@@ -70,7 +70,7 @@ export async function createMidtransTransaction(orderId: string) {
       order_id: `${order.order_id}-${Date.now()}`, 
       gross_amount: Number(order.grand_total),
     },
-    item_details: itemDetails,
+    item_details: item_details,
     customer_details: {
       first_name: address?.recipient_name || 'Pelanggan Toko',
       phone: address?.phone_number || '-',
