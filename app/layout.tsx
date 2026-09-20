@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Web Art",
+  title: "TokoART",
   description: "Website Toko Alat Rumah Tangga",
 };
 
