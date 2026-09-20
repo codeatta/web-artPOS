@@ -54,7 +54,7 @@ export default function AdminSidebar({
   // Filter menu berdasarkan hak akses
   const navItems = role === 'admin' 
     ? allNavItems 
-    : allNavItems.filter(item => !['Laporan', 'Pengaturan', 'Staff', 'Pengadaan', 'Notifikasi', 'Inventaris'].includes(item.name));
+    : allNavItems.filter(item => !['Laporan', 'Pengaturan', 'Staff', 'Pengadaan', 'Notifikasi'].includes(item.name));
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
