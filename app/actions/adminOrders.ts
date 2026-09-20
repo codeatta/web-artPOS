@@ -52,7 +52,7 @@ export async function updateOrderStatus(orderId: string, newStatus: string, trac
       notifMessage = `Pesanan Anda (${orderData.invoice_number}) telah diserahkan ke kurir. ${trackingNumber ? `No Resi: ${trackingNumber}` : 'Mohon ditunggu kedatangannya!'}`;
     } 
     // Skenario B: Pesanan Selesai / Diterima
-    else if (newStatus === 'completed') {
+    else if (newStatus === 'delivered') {
       notifTitle = 'Pesanan Telah Tiba! 🎁';
       notifMessage = `Pesanan ${orderData.invoice_number} telah sampai tujuan. Terima kasih telah berbelanja di TokoART!`;
     }
