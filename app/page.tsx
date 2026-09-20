@@ -138,9 +138,9 @@ export default async function StorefrontPage() {
             <div className="z-10 w-full md:w-1/2">
               <h2 className="text-xl md:text-4xl font-extrabold mb-2 md:mb-4">Koleksi Gerabah Asli</h2>
               <p className="text-sm md:text-lg mb-4 hidden md:block">Estetika natural untuk dapur dan taman Anda. Dibuat langsung oleh pengrajin lokal.</p>
-              <button className="bg-white text-orange-600 text-xs md:text-sm font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-sm hover:bg-gray-50 transition">
+              <Link href="/products" className="bg-white text-orange-600 text-xs md:text-sm font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-sm hover:bg-gray-50 transition">
                 Cek Sekarang
-              </button>
+              </Link>
             </div>
             <div className="absolute right-0 top-0 w-64 h-64 border-[40px] border-white/10 rounded-full -mr-10 -mt-10"></div>
             <div className="absolute right-40 bottom-0 w-32 h-32 bg-white/10 rounded-full -mb-10"></div>
