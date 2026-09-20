@@ -1,36 +1,53 @@
 // app/login/page.tsx
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
-import { Store, ArrowRight, AlertCircle, ArrowLeft } from 'lucide-react';
+'use client';
+
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client'; // <-- Menggunakan client
+import { Store, ArrowRight, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import toast from 'react-hot-toast'; // <-- Mengimpor Toast
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ message?: string; redirect_to?: string }>;
-}) {
-  const resolvedParams = await searchParams;
+// Kita memisahkan form ke dalam komponen agar bisa dibungkus Suspense (wajib di Next.js 15 untuk useSearchParams)
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(searchParams.get('message') || '');
 
-  const signIn = async (formData: FormData) => {
-    'use server';
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Mencegah halaman refresh otomatis
+    setLoading(true);
+    setErrorMsg('');
+
+    const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const redirectTo = formData.get('redirect_to') as string || '/';
+    const redirectTo = searchParams.get('redirect_to') || '/';
 
-    const supabase = await createClient();
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      return redirect(`/login?message=Email atau password salah!&redirect_to=${redirectTo}`);
+      // 1. Toast Jika Gagal
+      setErrorMsg('Email atau password salah!');
+      toast.error('Gagal masuk. Periksa kembali email & sandi Anda.');
+      setLoading(false);
+    } else {
+      // 2. Toast Jika Sukses
+      toast.success('Berhasil masuk! Selamat datang kembali. 🎉');
+      
+      // Arahkan pengguna ke halaman tujuan & refresh data navbar
+      router.push(redirectTo);
+      router.refresh(); 
     }
-    return redirect(redirectTo);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       
-      {/* Tombol Kembali di Luar Kartu (Posisi Kiri Atas) */}
+      {/* Tombol Kembali di Luar Kartu */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md mb-4 px-4 sm:px-0">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-orange-600 transition">
           <ArrowLeft size={16} /> Kembali ke Toko
@@ -38,7 +55,6 @@ export default async function LoginPage({
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Kontainer Kartu */}
         <div className="bg-white py-8 px-6 shadow-xl sm:rounded-3xl sm:px-10 border border-gray-100 mx-4 sm:mx-0">
           
           <div className="flex flex-col items-center mb-8">
@@ -51,16 +67,16 @@ export default async function LoginPage({
             </p>
           </div>
 
-          {resolvedParams.message && (
+          {/* Menampilkan pesan error statis (jika ada) */}
+          {errorMsg && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700">
               <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-              <p className="text-sm font-medium leading-snug">{resolvedParams.message}</p>
+              <p className="text-sm font-medium leading-snug">{errorMsg}</p>
             </div>
           )}
 
-          <form action={signIn} className="space-y-5">
-            <input type="hidden" name="redirect_to" value={resolvedParams.redirect_to || '/'} />
-
+          {/* Ubah 'action' menjadi 'onSubmit' */}
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1.5 pl-1" htmlFor="email">
                 Alamat Email
@@ -72,6 +88,7 @@ export default async function LoginPage({
                 type="email"
                 placeholder="budi@email.com"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -89,14 +106,21 @@ export default async function LoginPage({
                 type="password"
                 placeholder="••••••••"
                 required
+                disabled={loading}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-orange-200 mt-2"
+              disabled={loading}
+              className={`w-full flex items-center justify-center gap-2 font-bold py-3 px-4 rounded-xl transition shadow-lg mt-2 
+                ${loading ? 'bg-orange-400 text-white cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-200'}`}
             >
-              Masuk Sekarang <ArrowRight size={18} />
+              {loading ? (
+                <> <Loader2 size={18} className="animate-spin" /> Memproses... </>
+              ) : (
+                <> Masuk Sekarang <ArrowRight size={18} /> </>
+              )}
             </button>
           </form>
 
@@ -112,5 +136,14 @@ export default async function LoginPage({
         </div>
       </div>
     </div>
+  );
+}
+
+// Komponen Utama yang membungkus form dengan Suspense
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-orange-500" size={40} /></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
