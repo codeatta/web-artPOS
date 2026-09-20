@@ -126,7 +126,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </div>
 
               <div className="space-y-4 mb-8 text-sm text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="flex items-center gap-3"><MapPin size={18} className="text-gray-400" /> Dikirim dari <span className="font-bold text-gray-800">Kab. Bantul</span></p>
+                <p className="flex items-center gap-3"><MapPin size={18} className="text-gray-400" /> Dikirim dari <span className="font-bold text-gray-800">Kab. Ponorogo</span></p>
                 <p className="flex items-center gap-3"><Truck size={18} className="text-gray-400" /> Ongkir mulai dari Rp 10.000</p>
                 <p className="flex items-center gap-3"><ShieldCheck size={18} className="text-green-500" /> Garansi pengiriman aman (Pecah ganti baru)</p>
               </div>
