@@ -5,6 +5,7 @@ import React, { useTransition } from 'react';
 import { ShoppingCart, Loader2 } from 'lucide-react';
 import { addToCart } from '@/app/actions/cart';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface AddToCartButtonProps {
   productId: string;
@@ -25,15 +26,39 @@ export default function AddToCartButton({ productId, stock }: AddToCartButtonPro
 
       if (!result.success) {
         if (result.requireAuth) {
-          alert(result.message);
+          toast.error('Anda harus login terlebih dahulu untuk menambahkan ke keranjang.', {
+            duration: 4000,
+            style: {
+              background: '#333',
+              color: '#fff',
+              borderRadius: '10px',
+              fontWeight: '500',
+            },
+          });
           // Jika belum login, tendang ke halaman login
           router.push('/login');
         } else {
-          alert(`Gagal: ${result.message}`);
+          toast.error(`Gagal: ${result.message}`, {
+            duration: 4000,
+            style: {
+              background: '#333',
+              color: '#fff',
+              borderRadius: '10px',
+              fontWeight: '500',
+            },
+          });
         }
       } else {
-        // Tampilkan pesan sukses (Di proyek asli, Anda bisa mengganti alert dengan Toast/Snackbar)
-        alert(result.message);
+        toast.success('Barang berhasil ditambahkan ke keranjang! 🛒', {
+          duration: 4000,
+          style: {
+            background: '#333',
+            color: '#fff',
+            borderRadius: '10px',
+            fontWeight: '500',
+          },
+        });
+        router.refresh(); // Refresh halaman agar jumlah item di keranjang terupdate
       }
     });
   };

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       {/* Tambahkan padding bawah di mobile agar konten tidak tertutup menu */}
       <body className="min-h-full flex flex-col pb-16 md:pb-0">
+        
+        <Toaster 
+          position="top-center" 
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+              borderRadius: '10px',
+              fontWeight: '500',
+            },
+          }} 
+        />
         
         {/* Konten Utama Seluruh Halaman */}
         {children}

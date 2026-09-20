@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Bell, Menu, X, Home, ShoppingBag, ShoppingCart, User, MessageCircle, LogOut } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import toast from 'react-hot-toast';
 
 export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -71,6 +72,15 @@ export default function MobileHeaderMenu({ isLoggedIn }: { isLoggedIn: boolean }
     const supabase = createClient();
     await supabase.auth.signOut();
     setIsOpen(false);
+    toast.success('Berhasil keluar. Sampai jumpa lagi! 👋', {
+      duration: 4000,
+      style: {
+        background: '#10B981',
+        color: '#fff',
+        borderRadius: '10px',
+        fontWeight: '500',
+      },
+    });
     router.refresh();
   };
 
