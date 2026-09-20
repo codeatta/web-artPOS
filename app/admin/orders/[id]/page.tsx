@@ -2,8 +2,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js'; // Impor Admin Client
-import { ArrowLeft, MapPin, Package, Truck, Printer, Save, Ticket } from 'lucide-react';
+import { createClient as createAdminClient } from '@supabase/supabase-js'; 
+import { ArrowLeft, MapPin, Package, Truck, Printer, Save, Ticket, CreditCard, CheckCircle2, AlertCircle } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -35,13 +35,14 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       )
     : supabase;
 
-  // 3. Tarik Data Pesanan Lengkap (DIKOREKSI: Dihapus pemanggilan kolom 'price' yang bikin error)
+  // 3. Tarik Data Pesanan Lengkap (+ ditambah relasi ke tabel payments)
   const { data: order, error } = await queryClient
     .from('orders')
     .select(`
       *,
       user_addresses (*),
       shipping (*),
+      payments (*),
       order_items (
         quantity, price_at_time,
         products (name, sku, price_retail)
@@ -66,6 +67,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   // 4. PARSING OBJEK AMAN UNTUK RENDER TAMPILAN
   const address = Array.isArray(order.user_addresses) ? order.user_addresses[0] : order.user_addresses;
   const shipping = Array.isArray(order.shipping) ? order.shipping[0] : order.shipping;
+  const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments;
   const items = order.order_items || [];
   
   // PARSING ANGKA AMAN
@@ -74,49 +76,64 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const shippingCost = Number(order.shipping_cost) || 0;
   const grandTotal = Number(order.grand_total) || 0;
 
-  // 5. EKSTRAKSI PRIMITIF UNTUK SERVER ACTION (PENCEGAH ERROR BROWSER)
+  // EKSTRAKSI PRIMITIF UNTUK SERVER ACTION
   const currentShippingId = shipping?.shipping_id || null;
   const currentOrderStatus = order.order_status;
   const defaultResi = shipping?.tracking_number || '';
 
   const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  // 6. SERVER ACTION
+  // ====================================================================
+  // SERVER ACTION 1: UPDATE RESI
+  // ====================================================================
   async function updateShippingResi(formData: FormData) {
     'use server';
     const resi = formData.get('tracking_number') as string;
     
-    const sbpAuth = await createClient();
-    const { data: authUser } = await sbpAuth.auth.getUser();
-    const { data: authProfile } = await sbpAuth.from('user_profiles').select('role').eq('user_id', authUser.user?.id).single();
-    
-    if (authProfile?.role !== 'admin' && authProfile?.role !== 'kasir') {
-      throw new Error("Akses ditolak: Hanya staf yang dapat mengupdate resi.");
-    }
-
     const adminDb = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
     
-    // Gunakan variabel primitif
     if (currentShippingId) {
       await adminDb.from('shipping').update({ tracking_number: resi }).eq('shipping_id', currentShippingId);
     } else if (resi) {
       await adminDb.from('shipping').insert({
-        order_id: orderId,
-        courier_name: 'Kurir Eksternal',
-        tracking_number: resi,
-        shipping_cost: shippingCost,
-        status: 'shipped'
+        order_id: orderId, courier_name: 'Kurir Eksternal', tracking_number: resi, shipping_cost: shippingCost, status: 'shipped'
       });
     }
     
     if (resi && currentOrderStatus !== 'delivered' && currentOrderStatus !== 'cancelled') {
       await adminDb.from('orders').update({ order_status: 'shipped' }).eq('order_id', orderId);
     }
+    revalidatePath(`/admin/orders/${orderId}`);
+  }
+
+  // ====================================================================
+  // SERVER ACTION 2: KONFIRMASI PEMBAYARAN MANUAL (TRANSFER)
+  // ====================================================================
+  async function confirmManualPayment() {
+    'use server';
+    const adminDb = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    // 1. Ubah status order menjadi 'paid' (Lunas)
+    await adminDb.from('orders').update({ order_status: 'paid' }).eq('order_id', orderId);
     
+    // 2. Ubah status di tabel payments menjadi 'success'
+    if (payment) {
+      await adminDb.from('payments').update({ status: 'success', paid_at: new Date().toISOString() }).eq('payment_id', payment.payment_id);
+    } else {
+      // Jika karena alasan tertentu baris payment belum ada, buat baru
+      await adminDb.from('payments').insert({
+        order_id: orderId, payment_method: 'Manual/Transfer', status: 'success', paid_at: new Date().toISOString()
+      });
+    }
+
     revalidatePath(`/admin/orders/${orderId}`);
   }
 
@@ -130,8 +147,16 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 leading-none">Detail Pesanan</h1>
-            <p className="text-gray-500 mt-1.5 text-sm">{order.invoice_number}</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 leading-none">Detail Pesanan</h1>
+              
+              {/* Badge Status */}
+              {currentOrderStatus === 'pending_payment' && <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase">Belum Bayar</span>}
+              {currentOrderStatus === 'paid' && <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase">Lunas (Perlu Diproses)</span>}
+              {currentOrderStatus === 'shipped' && <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase">Dikirim</span>}
+              {currentOrderStatus === 'delivered' && <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase">Selesai</span>}
+            </div>
+            <p className="text-gray-500 mt-2 text-sm font-medium">{order.invoice_number}</p>
           </div>
         </div>
         
@@ -159,7 +184,6 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <p className="text-center text-sm text-gray-400 py-4">Data barang tidak ditemukan.</p>
               ) : (
                 items.map((item: any, idx: number) => {
-                  // DIKOREKSI: Hapus item.price dari sini juga agar tidak error
                   const price = Number(item.price_at_time) || Number(item.products?.price_retail) || 0;
                   const qty = Number(item.quantity) || 0;
                   const itemTotal = price * qty;
@@ -206,12 +230,61 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <span className="text-orange-600">{formatRupiah(grandTotal)}</span>
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* BAGIAN KANAN: PENGIRIMAN & EDIT RESI */}
+        {/* BAGIAN KANAN: INFO PEMBAYARAN, PENGIRIMAN & EDIT RESI */}
         <div className="space-y-6">
+          
+          {/* INFO PEMBAYARAN (BARU) */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 className="font-bold text-gray-800 border-b pb-3 mb-4 flex items-center gap-2 text-sm">
+              <CreditCard size={18} className="text-green-500" /> Informasi Pembayaran
+            </h2>
+            
+            <div className="space-y-3 text-sm text-gray-600">
+              <div className="flex justify-between">
+                <span>Metode:</span>
+                <span className="font-bold text-gray-900">{payment?.payment_method || 'Midtrans / Gateway'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <span className={`font-bold ${payment?.status === 'success' ? 'text-green-600' : 'text-orange-500'}`}>
+                  {payment?.status === 'success' ? 'Berhasil' : 'Pending'}
+                </span>
+              </div>
+              
+              {/* Jika Pembayaran Tunai (POS) */}
+              {payment?.payment_method === 'Tunai' && payment?.cash_received > 0 && (
+                <div className="pt-2 mt-2 border-t border-gray-50 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Uang Diterima:</span>
+                    <span className="font-medium text-gray-900">{formatRupiah(payment.cash_received)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Kembalian:</span>
+                    <span className="font-medium text-gray-900">{formatRupiah(payment.change_amount)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tombol Konfirmasi Manual (Jika Transfer/Pending) */}
+            {currentOrderStatus === 'pending_payment' && (
+              <form action={confirmManualPayment} className="mt-5">
+                <div className="bg-orange-50 p-3 rounded-lg flex gap-3 items-start mb-3 border border-orange-100">
+                  <AlertCircle size={18} className="text-orange-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-orange-800">
+                    Jika pelanggan menggunakan Transfer Bank manual, pastikan dana sudah masuk ke rekening sebelum menekan tombol di bawah.
+                  </p>
+                </div>
+                <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition shadow-sm text-sm">
+                  <CheckCircle2 size={18} /> Konfirmasi Pembayaran
+                </button>
+              </form>
+            )}
+          </div>
+
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="font-bold text-gray-800 border-b pb-3 mb-4 flex items-center gap-2 text-sm">
               <MapPin size={18} className="text-blue-500" /> Alamat Pengiriman
@@ -224,7 +297,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <p className="text-xs">{address.city}, {address.province} {address.postal_code}</p>
               </div>
             ) : (
-              <p className="text-sm text-red-500 font-medium bg-red-50 p-3 rounded-lg text-center">Alamat pengiriman tidak terkait / belum diisi.</p>
+              <p className="text-sm text-gray-500 font-medium bg-gray-50 p-3 rounded-lg text-center">Beli Langsung di Toko (POS)</p>
             )}
           </div>
 
