@@ -1,7 +1,7 @@
 // app/actions/checkout.ts
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import { createClient as createAdminClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
 export async function processCheckout(formData: FormData) {
@@ -10,6 +10,12 @@ export async function processCheckout(formData: FormData) {
 
   // Proteksi jika belum login
   if (!user) return redirect('/login');
+
+  const adminDb = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
 
   // Menangkap inputan dari form pengguna
   const addressId = formData.get('address_id') as string;
@@ -69,7 +75,7 @@ export async function processCheckout(formData: FormData) {
   const invoiceNumber = `INV/${dateStr}/${randomStr}`;
 
   // 6. INSERT KE TABEL ORDERS
-  const { data: orderData, error: orderError } = await supabase
+  const { data: orderData, error: orderError } = await adminDb
     .from('orders')
     .insert({
       invoice_number: invoiceNumber,
@@ -84,18 +90,28 @@ export async function processCheckout(formData: FormData) {
     .select('order_id')
     .single();
 
-  if (orderError) throw orderError;
+  if (orderError) {
+    console.error("GAGAL BUAT ORDER:", orderError);
+    throw new Error("Gagal membuat pesanan");
+  }
+
   const orderId = orderData.order_id;
 
   // 7. INSERT DETAIL PESANAN, PENGIRIMAN & PEMBAYARAN
   const itemsWithOrderId = orderItemsToInsert.map(item => ({ ...item, order_id: orderId }));
   
-  await Promise.all([
-    supabase.from('order_items').insert(itemsWithOrderId),
-    supabase.from('payments').insert({ order_id: orderId, payment_method: paymentMethod, status: 'pending' }),
-    supabase.from('shipping').insert({ order_id: orderId, courier_name: courier, service_type: 'REG' }),
-    supabase.from('carts').delete().eq('user_id', user.id) // 8. Hapus Keranjang
-  ]);
+  // Eksekusi satu per satu & tangkap log error-nya
+  const { error: itemsError } = await adminDb.from('order_items').insert(itemsWithOrderId);
+  if (itemsError) console.error("GAGAL INSERT ORDER_ITEMS:", itemsError);
+
+  const { error: paymentError } = await adminDb.from('payments').insert({ order_id: orderId, payment_method: paymentMethod, status: 'pending' });
+  if (paymentError) console.error("GAGAL INSERT PAYMENTS:", paymentError);
+
+  const { error: shippingError } = await adminDb.from('shipping').insert({ order_id: orderId, courier_name: courier, service_type: 'REG' });
+  if (shippingError) console.error("GAGAL INSERT SHIPPING:", shippingError);
+
+  // 8. Hapus Keranjang menggunakan Supabase client milik user 
+  await supabase.from('carts').delete().eq('user_id', user.id);
 
   // 9. Arahkan ke Beranda dengan pesan sukses
     return redirect(`/orders/${orderId}`);
