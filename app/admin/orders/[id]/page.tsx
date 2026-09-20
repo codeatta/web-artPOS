@@ -271,7 +271,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             </div>
 
             {/* Tombol Konfirmasi Manual (Jika Transfer/Pending) */}
-            {currentOrderStatus === 'pending_payment' && (
+            {payment?.status !== 'success' && (
               <div className="mt-5 space-y-3">
               <form action={confirmManualPayment} className="mt-5">
                 <div className="bg-orange-50 p-3 rounded-lg flex gap-3 items-start mb-3 border border-orange-100">
