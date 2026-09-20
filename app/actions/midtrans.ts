@@ -36,28 +36,32 @@ export async function createMidtransTransaction(orderId: string) {
     ? 'https://app.midtrans.com/snap/v1/transactions' 
     : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
-  const itemDetails = order.order_items.map((item: any) => ({
-    id: item.product_id || 'PROD',
-    price: Number(item.price_at_time),
+  // 1. Susun daftar barang (produk) yang dibeli
+  const item_details = order.order_items.map((item: any) => ({
+    id: item.product_id,
+    price: Number(item.price_per_item), // Gunakan price_per_item yang baru diperbaiki
     quantity: Number(item.quantity),
-    name: (item.products?.name || 'Produk Toko').substring(0, 50),
+    // Nama produk dibatasi maksimal 50 karakter oleh Midtrans
+    name: item.products?.name?.substring(0, 50) || 'Produk Gerabah' 
   }));
 
+  // 2. WAJIB: Masukkan Ongkos Kirim ke dalam daftar barang agar hitungannya seimbang
   if (Number(order.shipping_cost) > 0) {
-    itemDetails.push({
-      id: 'SHIPPING-COST',
+    item_details.push({
+      id: 'SHIPPING',
       price: Number(order.shipping_cost),
       quantity: 1,
-      name: 'Ongkos Kirim',
+      name: 'Ongkos Kirim'
     });
   }
 
+  // 3. Masukkan Diskon (opsional, jika toko Anda punya fitur diskon)
   if (Number(order.discount_amount) > 0) {
-    itemDetails.push({
+    item_details.push({
       id: 'DISCOUNT',
-      price: -Number(order.discount_amount),
+      price: -Math.abs(Number(order.discount_amount)), // Diskon harus bernilai MINUS
       quantity: 1,
-      name: 'Diskon Voucher',
+      name: 'Diskon Pesanan'
     });
   }
 
