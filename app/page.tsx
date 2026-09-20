@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { ShoppingCart, Search, Menu, MapPin, Star, Bell, Mail, Store, User } from 'lucide-react';
 import AddToCartButton from '@/components/AddToCartButton'; 
 import SearchBar from '@/components/SearchBar';
+import MobileHeaderMenu from '@/components/MobileHeaderMenu';
 
 export const revalidate = 60; 
 
@@ -85,11 +86,7 @@ export default async function StorefrontPage() {
                 <Store size={26} />
                 <span className="text-2xl font-extrabold tracking-tight">Toko<span className="text-gray-800">Gerabah</span></span>
               </Link>
-              <div className="flex items-center gap-4 md:hidden text-gray-500">
-                <Mail size={20} />
-                <Bell size={20} />
-                <Menu size={24} />
-              </div>
+              <MobileHeaderMenu isLoggedIn={!!user}/>
             </div>
 
             <div className="flex-1 w-full flex text-gray-700 items-center">
