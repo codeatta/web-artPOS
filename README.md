@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TokoART - E-Commerce & Point of Sale (POS) System
 
-## Getting Started
+TokoART adalah platform terintegrasi yang menggabungkan sistem *e-commerce* untuk pelanggan *online* dan sistem kasir (POS) untuk transaksi fisik di toko. Proyek ini dibangun menggunakan arsitektur Next.js (App Router) dengan backend Supabase, memastikan sinkronisasi data yang mulus antara stok *online* dan *offline*.
 
-First, run the development server:
+## 🛠️ Tech Stack
 
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL, Auth, RLS)
+- **Payment Gateway:** [Midtrans](https://midtrans.com/) (Snap API & Webhooks)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Notifications:** [React Hot Toast](https://react-hot-toast.com/)
+
+## ✨ Fitur Utama
+
+- **Dual Checkout System:** Mendukung *checkout* mandiri oleh pelanggan (E-Commerce) dan pembuatan pesanan manual oleh kasir (POS).
+- **Pembayaran Otomatis & Manual:** Integrasi Midtrans untuk Virtual Account dan QRIS otomatis, serta pencatatan pembayaran Tunai (lengkap dengan kalkulasi kembalian).
+- **Webhook Synchronization:** Status pesanan dan pembayaran (Tabel `orders` & `payments`) otomatis diperbarui secara serentak via Midtrans Webhook.
+- **Role-Based Access Control (RBAC):** Pemisahan hak akses khusus untuk `admin`, `kasir`, `customer`, dan `reseller`.
+- **Manajemen Voucher Dinamis:** Validasi kode promo dan diskon langsung dari *database* dengan perhitungan *subtotal* otomatis.
+- **Admin Dashboard Responsif:** Menggunakan sistem *Off-Canvas Sidebar* yang ramah *mobile* untuk manajemen pesanan, produk, dan notifikasi.
+
+## 🚀 Getting Started
+
+Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal.
+
+### 1. Clone Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/username-anda/tokoart.git
+cd tokoart
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
+```bash
+npm install
+# atau
+yarn install
+# atau
+pnpm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Konfigurasi Environment Variables
+Buat file `.env.local` di root direktori Anda dan isi dengan kredensial berikut:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-## Learn More
+# Midtrans Configuration (Ganti ke Production jika sudah live)
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=your_midtrans_client_key
+MIDTRANS_SERVER_KEY=your_midtrans_server_key
+NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=false
+```
+*(Catatan: Jangan pernah mengunggah nilai `SUPABASE_SERVICE_ROLE_KEY` dan `MIDTRANS_SERVER_KEY` ke sisi klien (browser) atau ke repositori publik).*
 
-To learn more about Next.js, take a look at the following resources:
+### 4. Jalankan Development Server
+```bash
+npm run dev
+# atau
+yarn dev
+```
+Buka [http://localhost:3000](http://localhost:3000) di browser Anda untuk melihat hasilnya.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔗 Pengaturan Midtrans Webhook
+Agar sistem dapat menerima status pembayaran otomatis dari Midtrans, pastikan Anda mendaftarkan URL aplikasi Anda di Dashboard Midtrans (Settings > Configuration):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Notification URL:** `https://domain-anda.com/api/midtrans-webhook`
 
-## Deploy on Vercel
+## 📦 Deploy di Vercel
+Cara termudah untuk melakukan deploy aplikasi Next.js ini adalah menggunakan Vercel:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Hubungkan repositori GitHub Anda ke Vercel.
+2. Masukkan semua Environment Variables di atas pada menu pengaturan proyek di Vercel.
+3. Klik Deploy.
