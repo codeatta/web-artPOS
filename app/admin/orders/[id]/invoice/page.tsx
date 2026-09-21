@@ -131,6 +131,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               <p>No    : {order.invoice_number}</p>
               <p>Tgl   : {formatDate(order.created_at)}</p>
               <p>Kasir : {cashierName}</p>
+
+              {/* NAMA DAN ALAMAT PELANGGAN */}
+              <p>Cust  : {address?.recipient_name || 'Umum (Offline)'}</p>
+              {address?.street_address && address.street_address !== '-' && (
+                <p>Alamat: {address.street_address}</p>
+              )}
               
               {order.order_status === 'paid' || order.order_status === 'delivered' ? (
                 <p className="mt-1 border border-gray-800 inline-block px-1 uppercase">Lunas</p>
