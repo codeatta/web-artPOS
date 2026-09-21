@@ -13,12 +13,14 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   
   const supabase = await createClient();
   
-  // 1. CEK LOGIN & ROLE ADMIN
+  // 1. CEK LOGIN & AMBIL NAMA KASIR
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase.from('user_profiles').select('role').eq('user_id', user.id).single();
+  // Ambil role dan nama lengkap untuk dicetak di struk
+  const { data: profile } = await supabase.from('user_profiles').select('role, name').eq('user_id', user.id).single();
   const isAdmin = profile?.role === 'admin' || profile?.role === 'kasir';
+  const cashierName = profile?.name || 'Admin / Kasir';
 
   if (!isAdmin) redirect('/unauthorized');
 
@@ -32,7 +34,6 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     : supabase;
 
   // 3. TARIK DATA PESANAN, PAYMENTS, & SETTINGS TOKO
-  // Kita tarik settings (ID 1) dan detail payment sekaligus
   const [orderRes, settingsRes] = await Promise.all([
     queryClient.from('orders').select(`
       *,
@@ -77,7 +78,6 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   return (
     <div className={`bg-gray-100 min-h-screen font-sans text-gray-900 selection:bg-blue-100 pb-10 ${isThermal ? 'text-[12px]' : ''}`}>
       
-      {/* Tombol Print (Sembunyi saat dicetak) */}
       <PrintButton />
 
       {/* SUNTIKAN CSS DINAMIS SESUAI UKURAN KERTAS */}
@@ -105,7 +105,6 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             padding: ${isThermal ? '5mm' : '0'} !important;
             box-shadow: none !important;
           }
-          /* Hilangkan break-line tabel di A4 */
           table { page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
         }
@@ -116,31 +115,51 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         id="invoice-container" 
         className={`mx-auto bg-white shadow-xl ${
           isThermal 
-            ? 'w-[80mm] p-4 text-xs mt-8' // Tampilan 80mm di browser
-            : 'max-w-4xl p-8 md:p-12 mt-8' // Tampilan A4 di browser
+            ? 'w-[80mm] p-4 text-xs mt-8' 
+            : 'max-w-4xl p-8 md:p-12 mt-8'
         }`}
       >
         
-        {/* HEADER */}
-        <div className={`border-b-2 border-dashed border-gray-300 pb-4 mb-4 ${isThermal ? 'text-center' : 'flex justify-between items-start'}`}>
-          <div>
-            <h1 className={`${isThermal ? 'text-xl' : 'text-4xl'} font-black text-gray-900 tracking-tighter uppercase`}>
-              {settings.store_name || 'TokoART.'}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              {settings.store_address || 'Jl. Pengrajin No.12, Indonesia'}<br/>
-              {settings.store_phone ? `WA: ${settings.store_phone}` : ''}
-            </p>
+        {/* HEADER KHUSUS THERMAL (Tanpa Bold) */}
+        {isThermal ? (
+          <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-3 text-gray-800">
+            <h1 className="text-lg uppercase">{settings.store_name || 'TokoART.'}</h1>
+            <p className="mt-1">{settings.store_address || 'Jl. Pengrajin No.12, Indonesia'}</p>
+            {settings.store_phone && <p>WA: {settings.store_phone}</p>}
+            
+            <div className="mt-2 pt-2 border-t border-dashed border-gray-400 text-left">
+              <p>No    : {order.invoice_number}</p>
+              <p>Tgl   : {formatDate(order.created_at)}</p>
+              <p>Kasir : {cashierName}</p>
+              
+              {order.order_status === 'paid' || order.order_status === 'delivered' ? (
+                <p className="mt-1 border border-gray-800 inline-block px-1 uppercase">Lunas</p>
+              ) : null}
+            </div>
           </div>
-          <div className={isThermal ? 'mt-3 pt-3 border-t border-dashed border-gray-200 text-left' : 'text-right'}>
-            {!isThermal && <h2 className="text-3xl font-bold text-gray-200 uppercase tracking-widest mb-2">INVOICE</h2>}
-            <p className="font-bold text-gray-800">{order.invoice_number}</p>
-            <p className="text-gray-500 mt-0.5">{formatDate(order.created_at)}</p>
-            {order.order_status === 'paid' || order.order_status === 'delivered' ? (
-              <p className="font-bold text-green-600 mt-1 uppercase text-xs border border-green-600 inline-block px-1">LUNAS</p>
-            ) : null}
+        ) : (
+          /* HEADER KHUSUS A4 (Dengan Bold & Besar) */
+          <div className="flex justify-between items-start border-b-2 border-dashed border-gray-300 pb-4 mb-4">
+            <div>
+              <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">
+                {settings.store_name || 'TokoART.'}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {settings.store_address || 'Jl. Pengrajin No.12, Indonesia'}<br/>
+                {settings.store_phone ? `WA: ${settings.store_phone}` : ''}
+              </p>
+            </div>
+            <div className="text-right">
+              <h2 className="text-3xl font-bold text-gray-200 uppercase tracking-widest mb-2">INVOICE</h2>
+              <p className="font-bold text-gray-800">{order.invoice_number}</p>
+              <p className="text-gray-500 mt-0.5">{formatDate(order.created_at)}</p>
+              <p className="text-gray-500 mt-0.5">Kasir: {cashierName}</p>
+              {order.order_status === 'paid' || order.order_status === 'delivered' ? (
+                <p className="font-bold text-green-600 mt-1 uppercase text-xs border border-green-600 inline-block px-1">LUNAS</p>
+              ) : null}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* INFO PELANGGAN (Hanya Muncul Penuh di A4) */}
         {!isThermal && (
@@ -156,24 +175,24 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         {/* TABEL / DAFTAR PRODUK */}
         <div className="mb-4">
           {isThermal ? (
-            // Layout Thermal (Bukan Tabel, tapi list menyamping)
-            <div className="space-y-3">
+            /* Layout Thermal (Tanpa Bold, Format: > Qty x Price = Total) */
+            <div className="space-y-2 border-b border-dashed border-gray-400 pb-3 text-gray-800">
               {items.map((item: any, idx: number) => {
                 const price = Number(item.price_at_time) || Number(item.products?.price_retail) || 0;
                 const qty = Number(item.quantity) || 0;
                 return (
                   <div key={idx}>
-                    <p className="font-bold">{item.products?.name}</p>
-                    <div className="flex justify-between text-gray-700 mt-0.5">
-                      <span>{qty} x {formatRupiah(price)}</span>
-                      <span className="font-bold">{formatRupiah(price * qty)}</span>
+                    <p>{item.products?.name}</p>
+                    <div className="flex justify-between pl-2 mt-0.5">
+                      <span>{'>'} {qty} x {formatRupiah(price)}</span>
+                      <span>= {formatRupiah(price * qty)}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            // Layout A4 (Tabel Resmi)
+            /* Layout A4 (Tabel Resmi, Dengan Bold) */
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-800">
@@ -205,41 +224,42 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* KALKULASI TOTAL */}
-        <div className={`border-t-2 border-dashed border-gray-300 pt-3 flex ${isThermal ? 'flex-col' : 'justify-end'}`}>
+        <div className={isThermal ? 'text-gray-800' : 'border-t-2 border-dashed border-gray-300 pt-3 flex justify-end'}>
           <div className={isThermal ? 'w-full space-y-1' : 'w-1/2 space-y-2'}>
-            <div className="flex justify-between text-gray-700">
+            
+            <div className="flex justify-between">
               <span>Subtotal</span>
               <span>{formatRupiah(subtotalPrice)}</span>
             </div>
 
             {discountAmount > 0 && (
-              <div className="flex justify-between text-green-700 font-medium">
+              <div className={`flex justify-between ${isThermal ? '' : 'text-green-700 font-medium'}`}>
                 <span>Diskon ({order.voucher_code})</span>
                 <span>-{formatRupiah(discountAmount)}</span>
               </div>
             )}
 
             {shippingCost > 0 && (
-              <div className="flex justify-between text-gray-700 pb-1">
+              <div className="flex justify-between pb-1">
                 <span>Ongkir {shipping?.courier_name ? `(${shipping.courier_name})` : ''}</span>
                 <span>{formatRupiah(shippingCost)}</span>
               </div>
             )}
             
-            {/* Grand Total */}
-            <div className={`flex justify-between font-black text-gray-900 border-t border-gray-300 pt-1 ${isThermal ? 'text-base mt-1' : 'text-lg mt-2'}`}>
+            {/* Grand Total (Tanpa bold untuk thermal) */}
+            <div className={`flex justify-between ${isThermal ? 'border-t border-dashed border-gray-400 pt-1 mt-1 text-base' : 'font-black text-gray-900 border-t border-gray-300 pt-1 text-lg mt-2'}`}>
               <span>TOTAL</span>
               <span>{formatRupiah(grandTotal)}</span>
             </div>
 
-            {/* Jika Pembayaran Tunai (POS), Tampilkan Uang & Kembalian */}
+            {/* Jika Pembayaran Tunai (POS) */}
             {payment?.payment_method === 'Tunai' && cashReceived > 0 && (
               <>
-                <div className="flex justify-between text-gray-700 mt-2">
+                <div className={`flex justify-between mt-2 ${isThermal ? '' : 'text-gray-700'}`}>
                   <span>Tunai (Cash)</span>
                   <span>{formatRupiah(cashReceived)}</span>
                 </div>
-                <div className="flex justify-between text-gray-900 font-bold">
+                <div className={`flex justify-between ${isThermal ? '' : 'text-gray-900 font-bold'}`}>
                   <span>Kembali</span>
                   <span>{formatRupiah(changeAmount)}</span>
                 </div>
@@ -248,16 +268,16 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
             {/* Metode Pembayaran Non-Tunai */}
             {payment?.payment_method !== 'Tunai' && (
-              <div className="flex justify-between text-gray-500 text-[11px] mt-2 pt-2 border-t border-gray-100">
-                <span>Metode Pembayaran:</span>
-                <span className="font-bold uppercase text-gray-700">{payment?.payment_method || '-'}</span>
+              <div className={`flex justify-between mt-2 pt-2 ${isThermal ? 'border-t border-dashed border-gray-400' : 'text-gray-500 text-[11px] border-t border-gray-100'}`}>
+                <span>Pembayaran:</span>
+                <span className={isThermal ? 'uppercase' : 'font-bold uppercase text-gray-700'}>{payment?.payment_method || '-'}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* FOOTER STRUK */}
-        <div className={`mt-8 pt-4 border-t-2 border-dashed border-gray-300 text-center text-gray-500 ${isThermal ? 'text-[10px]' : 'text-sm'}`}>
+        <div className={`mt-8 pt-4 ${isThermal ? 'border-t border-dashed border-gray-400 text-center text-[11px] text-gray-800' : 'border-t-2 border-dashed border-gray-300 text-center text-sm text-gray-500'}`}>
           <p>{settings.receipt_footer || 'Terima kasih atas kunjungan Anda!'}</p>
         </div>
 
